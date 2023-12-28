@@ -3,14 +3,16 @@ import time
 import json
 from dotenv import load_dotenv
 from ResourceUser.ResourceUser import ResourceUser
-from Types.Arn import RoleArn
+from Types.Arn import *
 
 class DeploymentStateMachine(ResourceUser):
 
-    def __init__(self):
+    def __init__(self, step_function_arn:StepFunctionArn = None):
         load_dotenv()
         role_arn = RoleArn(os.environ["STEP_FUNCTION_ROLE_ARN"])
         super().__init__(role_arn)
+        self.step_function_arn = step_function_arn
+        self.step_function_client = self.boto3_session.client("stepfunctions", region_name=os.environ["AWS_REGION"])
         self.state_machine_definition = {}
 
     def deploy(self, state_machine_name: str, comment:str=None, resource_users:list[ResourceUser]=[], deployment_args:list[dict]=[]) -> None:
@@ -33,7 +35,9 @@ class DeploymentStateMachine(ResourceUser):
                 current_dict["End"] = True
             return current_dict
         
-        self.login()
+        if self.step_function_arn:
+            raise ValueError("This object cannot call deploy() if it aiready has a step function arn. Set 'self.step_function_arn = None' and try again.")
+
         if comment:
             self.state_machine_definition["comment"] = comment
         
@@ -44,8 +48,7 @@ class DeploymentStateMachine(ResourceUser):
             current_dict = create_current_state(i)
             self.state_machine_definition["States"][f"lambda{i}"] = current_dict
 
-        self.stepfunctions_client = self.boto3_session.client("stepfunctions", region_name=os.environ["AWS_REGION"])
-        response = self.stepfunctions_client.create_state_machine(
+        response = self.step_function_client.create_state_machine(
             name=state_machine_name,
             definition=json.dumps(self.state_machine_definition),
             roleArn=self.role_arn.raw_str
@@ -58,7 +61,7 @@ class DeploymentStateMachine(ResourceUser):
         def wait_for_run_to_complete(execution_arn:str):
             execution_status = "RUNNING"
             while execution_status == 'RUNNING':
-                response = self.stepfunctions_client.describe_execution(
+                response = self.step_function_client.describe_execution(
                     executionArn=execution_arn
                 )
                 execution_status = response['status']
@@ -73,7 +76,7 @@ class DeploymentStateMachine(ResourceUser):
             raise ValueError("You did not deploy your state machine.")
         
         self.check_input(data)
-        response = self.stepfunctions_client.start_execution(
+        response = self.step_function_client.start_execution(
             stateMachineArn=self.state_machine_arn,
             input=json.dumps(data)
         )
@@ -81,7 +84,7 @@ class DeploymentStateMachine(ResourceUser):
         execution_status = wait_for_run_to_complete(execution_arn)
 
         if execution_status == 'SUCCEEDED':
-            output = self.stepfunctions_client.get_execution_history(
+            output = self.step_function_client.get_execution_history(
                 executionArn=execution_arn,
                 reverseOrder=True,
                 maxResults=1,

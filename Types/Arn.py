@@ -57,3 +57,15 @@ class LambdaArn:
             raise ValueError("The string that you passed to create a LambdaArn is invalid.")
         self.service = "lambda"
 
+class StepFunctionArn:
+
+    def __init__(self, step_function_arn_str:str):
+        self.raw_str = step_function_arn_str
+        parsed_arn = arnparse(step_function_arn_str)
+        self.account_id = parsed_arn.account_id
+        self.region = parsed_arn.region
+        self.resource = parsed_arn.resource
+        self.resource_type = parsed_arn.resource_type
+        if parsed_arn.service != "states":
+            raise ValueError("The string that you passed to create a step function arn is invalid.")
+        self.service = "states"
