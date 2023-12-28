@@ -1,0 +1,5 @@
+model.tar.gz
+.env
+__pycache__
+test.py
+aws_venv

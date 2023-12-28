@@ -1,0 +1,4 @@
+from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM
+from diffusers import StableDiffusionPipeline
+
+model_types = [AutoModelForSeq2SeqLM, AutoModelForCausalLM, StableDiffusionPipeline]
