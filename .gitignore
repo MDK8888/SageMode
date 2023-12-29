@@ -1,5 +1,7 @@
 model.tar.gz
 .env
 __pycache__
-test.py
 aws_venv
+todo.txt
+Tests
+test.py
