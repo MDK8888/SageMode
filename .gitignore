@@ -5,3 +5,5 @@ aws_venv
 todo.txt
 Tests
 test.py
+EC2KeyPair.pem
+ec2lambda_requirements.txt

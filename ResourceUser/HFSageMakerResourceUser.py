@@ -22,7 +22,7 @@ class HFSageMakerResourceUser(ResourceUser):
         role_arn = RoleArn(os.environ["SAGEMAKER_ROLE_ARN"])
         super().__init__(role_arn, next, previous)
         self.instance_type = instance_type
-        self.lambda_deployer = SageMakerLambdaResourceUser(lambda_arn)  
+        self.lambda_user = SageMakerLambdaResourceUser(lambda_arn)  
     
     def create_bucket(self) -> None:
         print("creating bucket...")
@@ -107,15 +107,15 @@ class HFSageMakerResourceUser(ResourceUser):
         initial_instance_count=1,
         instance_type=self.instance_type
         )
-        function_arn:LambdaArn = self.lambda_deployer.deploy(function_name, predictor.endpoint_name, timeout)
+        function_arn:LambdaArn = self.lambda_user.deploy(function_name, predictor.endpoint_name, timeout)
         print(f"deployment to sagemaker finished successfully. Time taken: {time.time() - t_start:.2f} seconds")
         return function_arn
     
     def use(self, data:dict):
-        if not self.lambda_deployer.function_arn:
+        if not self.lambda_user.function_arn:
             raise AttributeError("You did not deploy a huggingface model as a lambda function on AWS. Please run .deploy() and try again.")
-        self.lambda_deployer.wait_until_function_is_active()
+        self.lambda_user.wait_until_function_is_active()
         self.check_input(data)
-        response = self.lambda_deployer.use(data)
+        response = self.lambda_user.use(data)
         self.check_output(response)
         return response
