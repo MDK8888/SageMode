@@ -5,8 +5,7 @@ import tarfile
 import sagemaker
 from sagemaker.s3 import S3Uploader
 from dotenv import load_dotenv
-from shutil import rmtree
-from distutils.dir_util import copy_tree
+from shutil import rmtree, copytree
 from huggingface_hub import snapshot_download
 from sagemaker.huggingface.model import HuggingFaceModel
 from Types.HFModels import model_types
@@ -54,7 +53,7 @@ class HFSageMakerResourceUser(ResourceUser):
 
         self.model_dir = model_tar_dir
         # copy code/ to model dir
-        copy_tree("code/", str(model_tar_dir.joinpath("code")))
+        copytree("code/", str(model_tar_dir.joinpath("code")))
         rmtree("code")
 
     def compress(self, output_file="model.tar.gz", skip=False) -> None:
