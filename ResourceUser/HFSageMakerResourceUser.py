@@ -11,7 +11,7 @@ from huggingface_hub import snapshot_download
 from sagemaker.huggingface.model import HuggingFaceModel
 from Types.HFModels import model_types
 from .ResourceUser import ResourceUser
-from .LambdaResourceUser.SagemakerLambdaResourceUser import SageMakerLambdaResourceUser 
+from .LambdaResourceUser.SageMakerLambdaResourceUser import SageMakerLambdaResourceUser 
 from Types.Arn import *
 from Helpers.FileCopy import *
 
