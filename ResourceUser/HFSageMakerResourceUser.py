@@ -82,9 +82,15 @@ class HFSageMakerResourceUser(ResourceUser):
             self.model_uri = S3Uploader.upload(local_path=compressed_model_path, desired_s3_uri=f"s3://{self.bucket}/{self.model_dir}")
             print(f"upload to s3 finished successfully. Time taken: {time.time() - t_start:.2f} seconds")
 
-    def deploy(self, model_id:str, function_name:str, timeout:int=3, skip_compression=False, skip_upload=False, deployment_config:dict={"transformers_version":"4.26", 
-                                                                                               "pytorch_version":"1.13", 
-                                                                                               "python_version":"py39"}) -> LambdaArn:
+    def deploy(self, model_id:str, 
+                    function_name:str, 
+                    timeout:int=3, 
+                    skip_compression=False, 
+                    skip_upload=False, 
+                    lambda_python_version:str="3.8", 
+                    deployment_config:dict={"transformers_version":"4.26", 
+                                            "pytorch_version":"1.13", 
+                                            "python_version":"py39"}) -> LambdaArn:
         if self.lambda_user.function_arn:
             raise ValueError("We cannot call 'deploy' if the lambda_user already has a function_arn - set 'self.lambda_user.function_arn = None' and try again.")
         
@@ -110,7 +116,7 @@ class HFSageMakerResourceUser(ResourceUser):
         initial_instance_count=1,
         instance_type=self.instance_type
         )
-        function_arn:LambdaArn = self.lambda_user.deploy(function_name, predictor.endpoint_name, timeout)
+        function_arn:LambdaArn = self.lambda_user.deploy(function_name, predictor.endpoint_name, lambda_python_version, timeout)
         print(f"Deployment to SageMaker finished successfully. Time taken: {time.time() - t_start:.2f} seconds")
         return function_arn
     
