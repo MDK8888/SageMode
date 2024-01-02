@@ -79,12 +79,3 @@ class SageMakerLambdaResourceUser(ResourceUser):
             except ClientError as e:
                 print(f"An error occurred: {e}")
                 break
-
-if __name__ == "__main__":
-    load_dotenv("../.env")
-    role = RoleArn(os.environ["LAMBDA_ROLE_ARN"])
-    lambdaDeployer = SageMakerLambdaResourceUser(role)
-    lambdaDeployer.deploy("test", "test")
-    #lambdaDeployer.wait_until_function_is_active()
-    raw_response = lambdaDeployer.use({"text": "input in", "parameters":None})
-    print(raw_response)
