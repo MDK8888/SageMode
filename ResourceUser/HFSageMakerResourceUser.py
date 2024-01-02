@@ -36,6 +36,7 @@ class HFSageMakerResourceUser(ResourceUser):
         model_tar_dir = Path(model_id.split("/")[-1])
         model_tar_dir.mkdir(exist_ok=True)
         t_start = time.time()
+        local_inference_file_directory = "code"
         try:
             snapshot_download(model_id, local_dir=str(model_tar_dir), local_dir_use_symlinks=False)
             print(f"Huggingface model copied successfully. Time taken: {time.time() - t_start:.2f} seconds")
@@ -46,15 +47,15 @@ class HFSageMakerResourceUser(ResourceUser):
             try:
                 model_type.from_pretrained(model_id)
                 inference_file_name = model_type.__name__
-                copy_file_to_directory(f"InferenceFiles/{inference_file_name}.py", "code", "inference.py")    
+                copy_file_to_directory(f"InferenceFiles/{inference_file_name}.py", local_inference_file_directory, "inference.py")    
                 break
             except:
                 continue
 
         self.model_dir = model_tar_dir
         # copy code/ to model dir
-        copytree("code/", str(model_tar_dir.joinpath("code")))
-        rmtree("code")
+        copytree(local_inference_file_directory, str(model_tar_dir.joinpath("code")))
+        rmtree(local_inference_file_directory)
 
     def compress(self, output_file="model.tar.gz", skip=False) -> None:
         self.output_file = output_file
