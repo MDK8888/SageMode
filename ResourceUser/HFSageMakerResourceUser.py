@@ -83,11 +83,11 @@ class HFSageMakerResourceUser(ResourceUser):
             print(f"upload to s3 finished successfully. Time taken: {time.time() - t_start:.2f} seconds")
 
     def deploy(self, model_id:str, 
-                    function_name:str, 
-                    timeout:int=3, 
+                    function_name:str,  
                     skip_compression=False, 
                     skip_upload=False, 
-                    lambda_python_version:str="3.8", 
+                    lambda_python_version:str="3.8",
+                    timeout:int=3, 
                     deployment_config:dict={"transformers_version":"4.26", 
                                             "pytorch_version":"1.13", 
                                             "python_version":"py39"}) -> LambdaArn:
