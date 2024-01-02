@@ -25,12 +25,12 @@ class HFSageMakerResourceUser(ResourceUser):
         self.lambda_user = SageMakerLambdaResourceUser(lambda_arn)  
     
     def create_bucket(self) -> None:
-        print("creating bucket...")
+        print("Creating bucket...")
         sess = sagemaker.Session(self.boto3_session)
         try:
             self.bucket = sess.default_bucket()
         except:
-            raise Exception("unable to create bucket for session. Double check to make sure that your session is not 'None.'")
+            raise Exception("Unable to create bucket for session. Double check to make sure that your session is not 'None.'")
 
     def copy_from_huggingface(self, model_id:str) -> None:
         os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
@@ -39,7 +39,7 @@ class HFSageMakerResourceUser(ResourceUser):
         t_start = time.time()
         try:
             snapshot_download(model_id, local_dir=str(model_tar_dir), local_dir_use_symlinks=False)
-            print(f"huggingface model copied successfully. Time taken: {time.time() - t_start:.2f} seconds")
+            print(f"Huggingface model copied successfully. Time taken: {time.time() - t_start:.2f} seconds")
         except:
             raise ValueError("the model_id you have specified does not exist.")
 
@@ -85,6 +85,9 @@ class HFSageMakerResourceUser(ResourceUser):
     def deploy(self, model_id:str, function_name:str, timeout:int=3, skip_compression=False, skip_upload=False, deployment_config:dict={"transformers_version":"4.26", 
                                                                                                "pytorch_version":"1.13", 
                                                                                                "python_version":"py39"}) -> LambdaArn:
+        if self.lambda_user.function_arn:
+            raise ValueError("We cannot call 'deploy' if the lambda_user already has a function_arn - set 'self.lambda_user.function_arn = None' and try again.")
+        
         self.create_bucket()
         self.copy_from_huggingface(model_id)
         self.compress("model.tar.gz", skip_compression)
@@ -108,7 +111,7 @@ class HFSageMakerResourceUser(ResourceUser):
         instance_type=self.instance_type
         )
         function_arn:LambdaArn = self.lambda_user.deploy(function_name, predictor.endpoint_name, timeout)
-        print(f"deployment to SageMaker finished successfully. Time taken: {time.time() - t_start:.2f} seconds")
+        print(f"Deployment to SageMaker finished successfully. Time taken: {time.time() - t_start:.2f} seconds")
         return function_arn
     
     def use(self, data:dict):

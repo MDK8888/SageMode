@@ -138,6 +138,9 @@ class PyTorchEC2ResourceUser(ResourceUser):
                     lambda_python_pip_prefix:list[str] = ["pip"],
                     ec2_requirements_path:str = "requirements.txt", 
                     ) -> LambdaArn:
+                
+        if self.lambda_user.function_arn:
+            raise ValueError("We cannot call 'deploy' if the lambda_user already has a function_arn - set 'self.lambda_user.function_arn = None' and try again.")
         
         self.create_local_ec2_directory(model_path, weight_path, pre_process, post_process, ec2_requirements_path)
         public_dns = self.create_container_and_get_dns(ami_id)
