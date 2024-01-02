@@ -22,7 +22,7 @@ class PyTorchEC2ResourceUser(ResourceUser):
         self.ec2_client = self.boto3_session.client("ec2", region_name=os.environ["AWS_REGION"])
         self.lambda_user = EC2LambdaResourceUser()
 
-    def create_ec2_directory(self, model_path:str, 
+    def create_local_ec2_directory(self, model_path:str, 
                             weight_path:str, 
                             pre_process:Callable[[dict], torch.Tensor], 
                             post_process:Callable[[torch.Tensor], dict], 
@@ -71,7 +71,7 @@ class PyTorchEC2ResourceUser(ResourceUser):
 
         public_dns = instance.public_dns_name
 
-        print(f"Public DNS created. Public DNS: {public_dns}")
+        print(f"Public DNS created.")
 
         return public_dns
 
@@ -84,7 +84,7 @@ class PyTorchEC2ResourceUser(ResourceUser):
 
         wait_for_ssh_connection(ssh_client, "ec2-user", max_retries, timeout, public_dns)
 
-        print("Connection between local machine and ec2 container established.")
+        print("Connection between local machine and EC2 container established.")
 
         local_directory = 'EC2InferenceLocal'
         remote_directory = 'EC2Inference'        
@@ -99,9 +99,9 @@ class PyTorchEC2ResourceUser(ResourceUser):
         # Close the SSH connection
         ssh_client.close()
 
-        print("directory upload completed.")
+        print("Directory upload completed.")
 
-    def run_server(self, public_dns:str):
+    def run_server(self, public_dns:str, port:int=8000):
         ssh_client = paramiko.SSHClient()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
@@ -116,13 +116,15 @@ class PyTorchEC2ResourceUser(ResourceUser):
             'sudo yum update',
             'sudo yum install -y python3 python3-pip',
             'python3 --version',
-            'cd EC2Inference && pip install -r requirements.txt && (nohup uvicorn main:app --host 0.0.0.0 --port 8000 > output.log 2>&1 & disown)',  # Start FastAPI server
+            f'cd EC2Inference && pip install -r requirements.txt && (nohup uvicorn main:app --host 0.0.0.0 --port {port} > output.log 2>&1 & disown)',  # Start FastAPI server
         ]
 
         for command in commands:
             stdin, stdout, stderr = ssh_client.exec_command(command)
-            print("stderr:", stderr.read().decode())
-            print("stdout:", stdout.read().decode())
+            if len(stderr.read().decode()) > 0:
+                print(stderr.read().decode())
+            else:
+                print(stdout.read().decode())
 
         # Close the SSH connection
         ssh_client.close()
@@ -133,115 +135,29 @@ class PyTorchEC2ResourceUser(ResourceUser):
                     pre_process:Callable[[dict], torch.Tensor], 
                     post_process:Callable[[torch.Tensor], dict], 
                     lambda_function_name:str,
-                    lambda_timeout:int = 5,
-                    python_pip_prefix:list[str] = ["pip"],
-                    requirements_path:str = "requirements.txt") -> LambdaArn:
+                    lambda_python_pip_prefix:list[str] = ["pip"],
+                    ec2_requirements_path:str = "requirements.txt", 
+                    ) -> LambdaArn:
         
-        self.create_ec2_directory(model_path, weight_path, pre_process, post_process, requirements_path)
+        self.create_local_ec2_directory(model_path, weight_path, pre_process, post_process, ec2_requirements_path)
         public_dns = self.create_container_and_get_dns(ami_id)
         self.upload_directory_to_ec2(public_dns)
         self.run_server(public_dns)
 
+        print("Server started on EC2 instance. Creating Lambda function...")
+
         function_arn:LambdaArn = self.lambda_user.deploy(lambda_function_name, 
                                                          public_dns, 
                                                          8000, 
-                                                         python_pip_prefix, 
-                                                         requirements_path, 
-                                                         lambda_timeout)
-        print("deployment to ec2 complete.")
+                                                         lambda_python_pip_prefix
+                                                         )
+        print("Lambda function created. Deployment to ec2 complete.")
         return function_arn
     
-    def use():
-        pass
-
-
-
-
-
-
-
-
-
-
-        
-
-        
-
-
-
-
-        
-        '''
-        app = FastAPI()
-
-        @app.post("/predict")
-        def predict(data:dict) -> dict:
-            pre_process_result = pre_process(data)
-            raw_output = model(pre_process_result)
-            post_process_result = post_process(raw_output)
-            return post_process_result
-    
-        pickled_app = pickle.dumps(app)
-
-        instance_response = self.ec2_client.run_instances(
-        ImageId='ami-xxxxxxxxxxxxxxxxx',  # Specify the AMI ID
-        InstanceType=self.instance_type,
-        MinCount=1,
-        MaxCount=1,
-        UserData='#!/bin/bash\n',  # You can provide a user data script if needed
-        )
-
-        instance_id = instance_response['Instances'][0]['InstanceId']
-
-        # Step 3: Wait for the instance to be running
-        try:
-            self.ec2_client.get_waiter('instance_running').wait(InstanceIds=[instance_id])
-        except WaiterError as e:
-            print(f"Error waiting for instance to be running: {e}")
-            return
-
-        # Step 5: Get the public IP address of the instance
-        instance_info = self.ec2_client.describe_instances(InstanceIds=[instance_id])
-        public_ip = instance_info['Reservations'][0]['Instances'][0]['PublicIpAddress']
-
-        # Step 6: Copy the pickled FastAPI app to the instance using paramiko
-        key = paramiko.RSAKey(filename=f'/path/to/{key_name}.pem')  # Provide the path to your key file
-        ssh_client = paramiko.SSHClient()
-        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh_client.connect(public_ip, username='ec2-user', pkey=key)
-
-        with ssh_client.open_sftp() as sftp:
-            with sftp.file('/path/to/pickle_file', 'wb') as pickle_file:
-                pickle_file.write(pickled_app)
-
-        # Upload the requirements file (if it exists)
-        try:
-            with sftp.file('/path/to/requirements.txt', 'rb') as req_file:
-                sftp.put(req_file, 'requirements.txt')
-        except FileNotFoundError:
-            pass  # Ignore if no requirements file is provided
-
-        # Step 7: SSH into the instance and set up the environment
-        # Install external dependencies and run the FastAPI app
-        commands = [
-            'sudo apt-get update',
-            'sudo apt-get install -y python3-pip',
-            'pip3 install -r /path/to/requirements.txt' if 'requirements.txt' in locals() else '',  # Install dependencies if requirements file exists
-            f'python3 -m venv myenv && source myenv/bin/activate',  # Create and activate a virtual environment
-            f'pip install uvicorn',
-            f'python -c "import pickle; from fastapi import FastAPI; app = pickle.loads(open(\'/path/to/pickle_file\', \'rb\').read()); app.run(host=\'0.0.0.0\', port=8000)" &'
-        ]
-        command = ' && '.join(commands)
-
-        stdin, stdout, stderr = ssh_client.exec_command(command)
-
-        # Optionally, you may want to wait for some time to ensure that the app has started
-        time.sleep(10)
-
-        # Step 8: Print the public IP and port where the FastAPI app is running
-        print(f"FastAPI app is running at: http://{public_ip}:8000")
-
-        # Close the SSH connection
-        ssh_client.close()
-        '''
-
+    def use(self, data:dict):
+        if not self.lambda_user.function_arn:
+            raise AttributeError("You did not deploy a PyTorch model as a lambda function on AWS. Please run .deploy() and try again.")
+        self.check_input(data)
+        response = self.lambda_user.use(data)
+        self.check_output(response)
+        return response

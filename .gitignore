@@ -7,3 +7,6 @@ Tests
 test.py
 EC2KeyPair.pem
 ec2lambda_requirements.txt
+ec2_requirements.txt
+fish.jpg
+model.py
