@@ -6,7 +6,6 @@ todo.txt
 Tests
 test.py
 EC2KeyPair.pem
-ec2lambda_requirements.txt
-ec2_requirements.txt
+*_requirements.txt
 fish.jpg
 model.py
