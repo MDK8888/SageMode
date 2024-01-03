@@ -14,13 +14,13 @@ from Helpers.SSHConnect import wait_for_ssh_connection
 
 class PyTorchEC2ResourceUser(ResourceUser):
 
-    def __init__(self, instance_type:str, previous:dict[str, type]=None, next:dict[str, type]=None):
+    def __init__(self, instance_type:str, previous:dict[str, type] = None, next:dict[str, type] = None, lambda_function_arn:LambdaArn = None):
         load_dotenv()
         role_arn = RoleArn(os.environ["EC2_ROLE_ARN"])
         super().__init__(role_arn, previous, next)
         self.instance_type = instance_type
         self.ec2_client = self.boto3_session.client("ec2", region_name=os.environ["AWS_REGION"])
-        self.lambda_user = EC2LambdaResourceUser()
+        self.lambda_user = EC2LambdaResourceUser(lambda_function_arn)
 
     def create_local_ec2_directory(self, model_path:str, 
                             weight_path:str, 
