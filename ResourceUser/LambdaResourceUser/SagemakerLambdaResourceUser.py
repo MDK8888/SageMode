@@ -5,11 +5,13 @@ import json
 from dotenv import load_dotenv
 from ..ResourceUser import ResourceUser
 from Types.Arn import *
+from Helpers.FileCopy import copy_file_to_directory
 from botocore.exceptions import ClientError
 
 class SageMakerLambdaResourceUser(ResourceUser):
 
     def __init__(self, function_arn:LambdaArn=None):
+        load_dotenv()
         role_arn = RoleArn(os.environ["LAMBDA_ROLE_ARN"])
         super().__init__(role_arn)
         self.function_arn = function_arn
@@ -17,15 +19,19 @@ class SageMakerLambdaResourceUser(ResourceUser):
     
     def zip_lambda_file(self, file_name:str):
         local_zipped_lambda_dir = "lambda_zipped"
+        lambda_function_file_name = "lambda"
+        copy_file_to_directory(file_name, os.getcwd(), f"{lambda_function_file_name}.py")
         with zipfile.ZipFile(f"{local_zipped_lambda_dir}.zip", 'w') as zipped:
-            zipped.write(f"{file_name}.py")
+            zipped.write(f"{lambda_function_file_name}.py")
             zipped.close()
+        os.remove(f"{lambda_function_file_name}.py")
 
     def deploy(self, function_name:str, endpoint_name:str=None, python_version:str="3.8", timeout:int=3) -> LambdaArn:
         if self.function_arn:
             raise ValueError("This object cannot call 'deploy' if it already has a function_arn - set 'self.function_arn = None' and try again.")
         
-        lambda_function_file_path = "LambdaFunctions/Sagemaker/Sagemaker"
+        local_zipped_lambda_dir = "lambda_zipped"
+        lambda_function_file_path = "LambdaFunctions/Sagemaker/Sagemaker.py"
         self.zip_lambda_file(lambda_function_file_path)
         if endpoint_name is None:
             endpoint_name = os.environ["ENDPOINT_NAME"]
@@ -34,19 +40,19 @@ class SageMakerLambdaResourceUser(ResourceUser):
             FunctionName=function_name,
             Runtime=f'python{python_version}',
             Role=self.role_arn.raw_str,  # Replace with your Lambda execution role ARN
-            Handler='LambdaFunctions/Sagemaker/Sagemaker.lambda_handler',  # Specify the module and function name
+            Handler='lambda.lambda_handler',  # Specify the module and function name
             Timeout=timeout,
             Code={
-                'ZipFile': open(f"lambda_zipped.zip", "rb").read()  # Read the content of the file
+                'ZipFile': open(f"{local_zipped_lambda_dir}.zip", "rb").read()  # Read the content of the file
             },
             Environment={
-                'Variables': {"ENDPOINT_NAME":endpoint_name}
+                'Variables': {"ENDPOINT_NAME": endpoint_name}
             }
         )
         self.function_arn = LambdaArn(response["FunctionArn"])
         self.wait_until_function_is_active()                
         print("You have successfully created your lambda function. Lambda Function arn:", response['FunctionArn'])
-        os.remove("lambda_zipped.zip")
+        os.remove(f"{local_zipped_lambda_dir}.zip")
         return self.function_arn
     
     def use(self, data:dict):
