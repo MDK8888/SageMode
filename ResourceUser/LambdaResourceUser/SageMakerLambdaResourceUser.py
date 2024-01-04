@@ -30,8 +30,8 @@ class SageMakerLambdaResourceUser(ResourceUser):
         if self.function_arn:
             raise ValueError("This object cannot call 'deploy' if it already has a function_arn - set 'self.function_arn = None' and try again.")
         
-        local_zipped_lambda_dir = "lambda_zipped"
-        lambda_function_file_path = "./LambdaFunctions/Sagemaker/Sagemaker.py"
+        local_zipped_lambda_dir = f"{os.getcwd()}/lambda_zipped.zip"
+        lambda_function_file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'LambdaFunctions', "SageMaker", "SageMaker.py")
         self.zip_lambda_file(lambda_function_file_path)
         if endpoint_name is None:
             endpoint_name = os.environ["ENDPOINT_NAME"]
@@ -43,7 +43,7 @@ class SageMakerLambdaResourceUser(ResourceUser):
             Handler='lambda.lambda_handler',  # Specify the module and function name
             Timeout=timeout,
             Code={
-                'ZipFile': open(f"{local_zipped_lambda_dir}.zip", "rb").read()  # Read the content of the file
+                'ZipFile': open(local_zipped_lambda_dir, "rb").read()  # Read the content of the file
             },
             Environment={
                 'Variables': {"ENDPOINT_NAME": endpoint_name}
@@ -52,7 +52,7 @@ class SageMakerLambdaResourceUser(ResourceUser):
         self.function_arn = LambdaArn(response["FunctionArn"])
         self.wait_until_function_is_active()                
         print("You have successfully created your lambda function. Lambda Function arn:", response['FunctionArn'])
-        os.remove(f"{local_zipped_lambda_dir}.zip")
+        os.remove(local_zipped_lambda_dir)
         return self.function_arn
     
     def use(self, data:dict):

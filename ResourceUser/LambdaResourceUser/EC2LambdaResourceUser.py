@@ -45,7 +45,8 @@ class EC2LambdaResourceUser(ResourceUser):
         if self.function_arn:
             raise ValueError("This object cannot call 'deploy' if it already has a function_arn - set 'self.function_arn = None' and try again.")
         
-        self.zip_lambda_file("./LambdaFunctions/EC2/EC2.py", python_pip_prefix, requests_version)
+        lambda_function_file_path =  os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'LambdaFunctions', "EC2", "EC2.py")
+        self.zip_lambda_file(lambda_function_file_path, python_pip_prefix, requests_version)
 
         local_zipped_lambda_dir = f"{os.getcwd()}/lambda_zipped.zip"
 
