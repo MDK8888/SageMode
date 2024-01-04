@@ -17,7 +17,7 @@ class EC2LambdaResourceUser(ResourceUser):
         self.lambda_client = self.boto3_session.client("lambda")
     
     def zip_lambda_file(self, lambda_function_file_name:str, python_pip_prefix:list[str], requests_version:str="2.31.0"):
-        local_zipped_lambda_dir = "lambda_zipped"
+        local_zipped_lambda_dir = f"{os.getcwd()}/lambda_zipped"
         os.mkdir(local_zipped_lambda_dir)
 
         copy_file_to_directory(lambda_function_file_name, local_zipped_lambda_dir, "lambda_function.py")
@@ -47,7 +47,7 @@ class EC2LambdaResourceUser(ResourceUser):
         
         self.zip_lambda_file("./LambdaFunctions/EC2/EC2.py", python_pip_prefix, requests_version)
 
-        local_zipped_lambda_dir = "lambda_zipped.zip"
+        local_zipped_lambda_dir = f"{os.getcwd()}/lambda_zipped.zip"
 
         response = self.lambda_client.create_function(
             FunctionName=function_name,

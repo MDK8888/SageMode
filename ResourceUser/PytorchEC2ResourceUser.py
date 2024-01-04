@@ -36,21 +36,26 @@ class PyTorchEC2ResourceUser(ResourceUser):
         copy_file_to_directory(server_code_path, ec2_inference_path, ec2_server_file_name)
 
         pre_process_input_path = "pre_process.py"
-        write_function_to_file(pre_process, pre_process_input_path)
-        copy_file_to_directory(pre_process_input_path, ec2_inference_path, pre_process_input_path)
+        absolute_pre_process_input_path = f"{os.getcwd()}/pre_process.py"
+        write_function_to_file(pre_process, absolute_pre_process_input_path)
+        copy_file_to_directory(absolute_pre_process_input_path, ec2_inference_path, pre_process_input_path)
         
         post_process_output_path = "post_process.py"
-        write_function_to_file(post_process, post_process_output_path)
-        copy_file_to_directory(post_process_output_path, ec2_inference_path, post_process_output_path)
+        absolute_post_process_output_path = f"{os.getcwd()}/post_process.py"
+        write_function_to_file(post_process, absolute_post_process_output_path)
+        copy_file_to_directory(absolute_post_process_output_path, ec2_inference_path, post_process_output_path)
 
         ec2_weight_path = "weights.pth"
-        copy_file_to_directory(weight_path, ec2_inference_path, ec2_weight_path)
+        absolute_weight_path = f"{os.getcwd()}/{weight_path}"
+        copy_file_to_directory(absolute_weight_path, ec2_inference_path, ec2_weight_path)
 
         ec2_model_path = "model.py"
-        copy_file_to_directory(model_path, ec2_inference_path, ec2_model_path)
+        absolute_model_path = f"{os.getcwd()}/{model_path}"
+        copy_file_to_directory(absolute_model_path, ec2_inference_path, ec2_model_path)
 
         ec2_requirements_path = "requirements.txt"
-        copy_file_to_directory(requirements_path, ec2_inference_path, ec2_requirements_path)
+        absolute_requirements_path = f"{os.getcwd()}/{requirements_path}"
+        copy_file_to_directory(absolute_requirements_path, ec2_inference_path, ec2_requirements_path)
         
     def create_container_and_get_dns(self, ami_id:str) -> str:
         instance_id = self.ec2_client.run_instances(
@@ -86,7 +91,7 @@ class PyTorchEC2ResourceUser(ResourceUser):
 
         print("Connection between local machine and EC2 container established.")
 
-        local_directory = 'EC2InferenceLocal'
+        local_directory = f'{os.getcwd()}/EC2InferenceLocal'
         remote_directory = 'EC2Inference'        
 
         sftp = ssh_client.open_sftp()
