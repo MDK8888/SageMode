@@ -31,8 +31,8 @@ class PyTorchEC2ResourceUser(ResourceUser):
         ec2_inference_path = os.path.join(os.getcwd(), "EC2InferenceLocal")
         os.mkdir(ec2_inference_path)
 
-        server_code_path = f"./InferenceFiles/PyTorchEC2/server/main.py"
-        ec2_server_file_name = server_code_path.split("/")[-1]
+        server_code_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "InferenceFiles", "PyTorchEC2", "server", "main.py")
+        ec2_server_file_name = "main.py"
         copy_file_to_directory(server_code_path, ec2_inference_path, ec2_server_file_name)
 
         pre_process_input_path = "pre_process.py"

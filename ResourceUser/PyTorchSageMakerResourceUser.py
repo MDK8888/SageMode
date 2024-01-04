@@ -45,7 +45,7 @@ class PyTorchSageMakerResourceUser(ResourceUser):
             write_function_to_file(fn, local_file_name)
             copy_file_to_directory(local_file_name, local_pytorch_directory_path, f"{file_name}.py")
         
-        entry_file_path = "./InferenceFiles/PyTorchSageMaker/PyTorchSageMaker.py"
+        entry_file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'InferenceFiles', "PyTorchSageMaker", "PyTorchSageMaker.py")
         sagemaker_entry_point = "entry.py"
         copy_file_to_directory(entry_file_path, local_pytorch_directory_path, sagemaker_entry_point)
 

@@ -47,7 +47,8 @@ class HFSageMakerResourceUser(ResourceUser):
             try:
                 model_type.from_pretrained(model_id)
                 inference_file_name = model_type.__name__
-                copy_file_to_directory(f"./InferenceFiles/HFSageMaker/{inference_file_name}.py", local_inference_file_directory, "inference.py")    
+                inference_file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'InferenceFiles', 'HFSageMaker', f"{inference_file_name}.py")
+                copy_file_to_directory(inference_file_path, local_inference_file_directory, "inference.py")    
                 break
             except:
                 continue
