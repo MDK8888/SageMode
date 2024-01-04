@@ -35,31 +35,35 @@ class PyTorchSageMakerResourceUser(ResourceUser):
             raise Exception("Unable to create bucket for session. Double check to make sure that your session is not 'None.'")
 
     def make_inference_local_directory(self, functions_dict:dict[str, Callable], model_path:str, weight_path:str, requirements_path:str = "requirements.txt") -> None:
-        local_pytorch_directory_path = "PyTorchSageMaker"
-        self.model_dir = local_pytorch_directory_path
+        local_pytorch_directory_path = os.path.join(os.getcwd(), "PyTorchSageMaker")
+        self.model_dir = str(local_pytorch_directory_path)
         os.mkdir(local_pytorch_directory_path)
+
         for file_name in functions_dict:
-            local_file_name = f"{file_name}.py"
+            local_file_name = f"{os.getcwd()}/{file_name}.py"
             fn = functions_dict[file_name]
             write_function_to_file(fn, local_file_name)
             copy_file_to_directory(local_file_name, local_pytorch_directory_path, local_file_name)
         
-        entry_file_path = f"{os.getcwd()}/InferenceFiles/PyTorchSageMaker/PyTorchSageMaker.py"
+        entry_file_path = "./InferenceFiles/PyTorchSageMaker/PyTorchSageMaker.py"
         sagemaker_entry_point = "entry.py"
         copy_file_to_directory(entry_file_path, local_pytorch_directory_path, sagemaker_entry_point)
 
         sagemaker_model_path = "model.py"
-        copy_file_to_directory(model_path, local_pytorch_directory_path, sagemaker_model_path)
+        absolute_model_path = f"{os.getcwd()}/{model_path}"
+        copy_file_to_directory(absolute_model_path, local_pytorch_directory_path, sagemaker_model_path)
         
         sagemaker_weight_path = "weights.pth"
-        copy_file_to_directory(weight_path, local_pytorch_directory_path, sagemaker_weight_path)
+        absolute_weight_path = f"{os.getcwd()}/{weight_path}"
+        copy_file_to_directory(absolute_weight_path, local_pytorch_directory_path, sagemaker_weight_path)
 
-        copy_file_to_directory(requirements_path, local_pytorch_directory_path, requirements_path)
+        absolute_requirements_path = f"{os.getcwd()}/{requirements_path}"
+        copy_file_to_directory(absolute_requirements_path, local_pytorch_directory_path, requirements_path)
         
         print(f"all necessary files copied into directory {local_pytorch_directory_path}/")
 
     def compress(self, output_file="model.tar.gz", skip=False) -> None:
-        self.output_file = output_file
+        self.output_file = str(os.path.join(os.getcwd(), output_file))
         if skip:
             print("You have selected to skip compressing your model. Skipping this step...")
         else:
@@ -67,7 +71,7 @@ class PyTorchSageMakerResourceUser(ResourceUser):
             t_start = time.time()
             parent_dir=os.getcwd()
             os.chdir(self.model_dir)
-            with tarfile.open(os.path.join(parent_dir, output_file), "w:gz") as tar:
+            with tarfile.open(self.output_file, "w:gz") as tar:
                 for item in os.listdir('.'):
                     tar.add(item, arcname=item)
             print(f"compression finished successfully. Time taken: {time.time() - t_start:.2f} seconds")

@@ -33,10 +33,10 @@ class HFSageMakerResourceUser(ResourceUser):
 
     def copy_from_huggingface(self, model_id:str) -> None:
         os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
-        model_tar_dir = Path(model_id.split("/")[-1])
-        model_tar_dir.mkdir(exist_ok=True)
+        model_tar_dir = os.path.join(os.getcwd(), model_id.split("/")[-1])
+        os.mkdir(model_tar_dir)
         t_start = time.time()
-        local_inference_file_directory = "code"
+        local_inference_file_directory = os.path.join(os.getcwd(), "code")
         try:
             snapshot_download(model_id, local_dir=str(model_tar_dir), local_dir_use_symlinks=False)
             print(f"Huggingface model copied successfully. Time taken: {time.time() - t_start:.2f} seconds")
@@ -47,18 +47,17 @@ class HFSageMakerResourceUser(ResourceUser):
             try:
                 model_type.from_pretrained(model_id)
                 inference_file_name = model_type.__name__
-                copy_file_to_directory(f"InferenceFiles/HFSageMaker/{inference_file_name}.py", local_inference_file_directory, "inference.py")    
+                copy_file_to_directory(f"./InferenceFiles/HFSageMaker/{inference_file_name}.py", local_inference_file_directory, "inference.py")    
                 break
             except:
                 continue
 
-        self.model_dir = model_tar_dir
+        self.model_dir = str(model_tar_dir)
         # copy code/ to model dir
-        copytree(local_inference_file_directory, str(model_tar_dir.joinpath("code")))
-        rmtree(local_inference_file_directory)
+        copytree(str(local_inference_file_directory), str(os.path.join(model_tar_dir, "code")))
 
     def compress(self, output_file="model.tar.gz", skip=False) -> None:
-        self.output_file = output_file
+        self.output_file = str(os.path.join(os.getcwd(), output_file))
         if skip:
             print("You have selected to skip compressing your model. Skipping this step...")
         else:
@@ -66,7 +65,7 @@ class HFSageMakerResourceUser(ResourceUser):
             t_start = time.time()
             parent_dir=os.getcwd()
             os.chdir(self.model_dir)
-            with tarfile.open(os.path.join(parent_dir, output_file), "w:gz") as tar:
+            with tarfile.open(self.output_file, "w:gz") as tar:
                 for item in os.listdir('.'):
                     tar.add(item, arcname=item)
             print(f"compression finished successfully. Time taken: {time.time() - t_start:.2f} seconds")

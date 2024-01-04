@@ -28,10 +28,10 @@ class PyTorchEC2ResourceUser(ResourceUser):
                             post_process:Callable[[torch.Tensor], dict], 
                             requirements_path:str = "requirements.txt") -> None:
 
-        ec2_inference_path = "EC2InferenceLocal"
+        ec2_inference_path = os.path.join(os.getcwd(), "EC2InferenceLocal")
         os.mkdir(ec2_inference_path)
 
-        server_code_path = f"{os.getcwd()}/InferenceFiles/PyTorchEC2/server/main.py"
+        server_code_path = f"./InferenceFiles/PyTorchEC2/server/main.py"
         ec2_server_file_name = server_code_path.split("/")[-1]
         copy_file_to_directory(server_code_path, ec2_inference_path, ec2_server_file_name)
 

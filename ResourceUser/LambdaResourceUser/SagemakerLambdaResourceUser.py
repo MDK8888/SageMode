@@ -31,7 +31,7 @@ class SageMakerLambdaResourceUser(ResourceUser):
             raise ValueError("This object cannot call 'deploy' if it already has a function_arn - set 'self.function_arn = None' and try again.")
         
         local_zipped_lambda_dir = "lambda_zipped"
-        lambda_function_file_path = "LambdaFunctions/Sagemaker/Sagemaker.py"
+        lambda_function_file_path = "./LambdaFunctions/Sagemaker/Sagemaker.py"
         self.zip_lambda_file(lambda_function_file_path)
         if endpoint_name is None:
             endpoint_name = os.environ["ENDPOINT_NAME"]
