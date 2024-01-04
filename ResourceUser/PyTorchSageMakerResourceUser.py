@@ -43,7 +43,7 @@ class PyTorchSageMakerResourceUser(ResourceUser):
             local_file_name = f"{os.getcwd()}/{file_name}.py"
             fn = functions_dict[file_name]
             write_function_to_file(fn, local_file_name)
-            copy_file_to_directory(local_file_name, local_pytorch_directory_path, local_file_name)
+            copy_file_to_directory(local_file_name, local_pytorch_directory_path, f"{file_name}.py")
         
         entry_file_path = "./InferenceFiles/PyTorchSageMaker/PyTorchSageMaker.py"
         sagemaker_entry_point = "entry.py"
@@ -78,13 +78,16 @@ class PyTorchSageMakerResourceUser(ResourceUser):
             os.chdir(parent_dir)
 
     def upload_to_s3(self, skip=False) -> None:
+        s3_model_dir = os.path.basename(self.model_dir)
+        s3_output_file = os.path.basename(self.output_file)
+
         if skip:
             print("You have chosen to skip uploading to s3. Skipping this step...")
-            self.model_uri = f"s3://{self.bucket}/{self.model_dir}/{self.output_file}"
+            self.model_uri = f"s3://{self.bucket}/{s3_model_dir}/{s3_output_file}"
         else:
             t_start = time.time()
             compressed_model_path = self.output_file
-            self.model_uri = S3Uploader.upload(local_path=compressed_model_path, desired_s3_uri=f"s3://{self.bucket}/{self.model_dir}")
+            self.model_uri = S3Uploader.upload(local_path=compressed_model_path, desired_s3_uri=f"s3://{self.bucket}/{s3_model_dir}")
             print(f"upload to s3 finished successfully. Time taken: {time.time() - t_start:.2f} seconds")
 
     def deploy(self,function_name:str,
@@ -93,8 +96,8 @@ class PyTorchSageMakerResourceUser(ResourceUser):
                     weight_path:str = "weights.pth",
                     skip_compression=False, 
                     skip_upload=False, 
-                    python_version:str= "3.8",
-                    pytorch_version:str= "1.10",
+                    lambda_python_version:str= "3.8",
+                    deployment_config:dict = {"python_version":"py38", "pytorch_version": "1.10"},
                     requirements_path:str = "requirements.txt",
                     timeout:int=3, 
                     ) -> LambdaArn:
@@ -111,13 +114,15 @@ class PyTorchSageMakerResourceUser(ResourceUser):
         entry_file_in_directory = "entry.py"
         local_pytorch_directory_path = "PyTorchSageMaker"
 
+        pytorch_version, python_version = deployment_config["pytorch_version"], deployment_config["python_version"]
+
         pytorch_model = PyTorchModel(
             model_data=self.model_uri,
             role=self.role_arn.raw_str,
             framework_version=pytorch_version,
-            py_version="py38",
-            entry_point=f"{local_pytorch_directory_path}/{entry_file_in_directory}",
-            dependencies=[requirements_path]
+            py_version=python_version,
+            entry_point=f"{os.getcwd()}/{local_pytorch_directory_path}/{entry_file_in_directory}",
+            dependencies=[f"{os.getcwd()}/{requirements_path}"]
         )
 
         self.predictor = pytorch_model.deploy(
@@ -125,7 +130,7 @@ class PyTorchSageMakerResourceUser(ResourceUser):
             instance_type=self.instance_type
         )
         
-        function_arn:LambdaArn = self.lambda_user.deploy(function_name, self.predictor.endpoint_name, python_version, timeout)
+        function_arn:LambdaArn = self.lambda_user.deploy(function_name, self.predictor.endpoint_name, lambda_python_version, timeout)
         print(f"Deployment to SageMaker finished successfully. Time taken: {time.time() - t_start:.2f} seconds")
         return function_arn
     

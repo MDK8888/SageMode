@@ -72,13 +72,15 @@ class HFSageMakerResourceUser(ResourceUser):
             os.chdir(parent_dir)
 
     def upload_to_s3(self, skip=False) -> None:
+        s3_model_dir = os.path.basename(self.model_dir)
+        s3_output_file = os.path.basename(self.output_file)
         if skip:
             print("You have chosen to skip uploading to s3. Skipping this step...")
-            self.model_uri = f"s3://{self.bucket}/{self.model_dir}/{self.output_file}"
+            self.model_uri = f"s3://{self.bucket}/{s3_model_dir}/{s3_output_file}"
         else:
             t_start = time.time()
             compressed_model_path = self.output_file
-            self.model_uri = S3Uploader.upload(local_path=compressed_model_path, desired_s3_uri=f"s3://{self.bucket}/{self.model_dir}")
+            self.model_uri = S3Uploader.upload(local_path=compressed_model_path, desired_s3_uri=f"s3://{self.bucket}/{s3_model_dir}")
             print(f"upload to s3 finished successfully. Time taken: {time.time() - t_start:.2f} seconds")
 
     def deploy(self, model_id:str, 
@@ -97,7 +99,6 @@ class HFSageMakerResourceUser(ResourceUser):
         self.copy_from_huggingface(model_id)
         self.compress("model.tar.gz", skip_compression)
         self.upload_to_s3(skip_upload)
-
 
         transformers_version, pytorch_version, python_version = \
         deployment_config["transformers_version"], deployment_config["pytorch_version"], deployment_config["python_version"]
