@@ -26,6 +26,7 @@ SageMode is a python library for deploying, scaling, and monitoring machine lear
    - add rapid teardown of EC2 and SageMaker Resources (0.1.1)
    - if needed, add HFEC2ResourceUser (0.1.1)
    - For EC2ResourceUsers, allow weights to be pulled from buckets (0.1.2)
+   - allow for a "clean" deploy (all extra files created are also deleted) and a "dirty" deploy (no files created in the deployment process are deleted, better for debugging) (0.1.1)
    - Turn deployment chains into deployment graphs (0.1.2)
    - Add **kwargs to PytorchEC2ResourceUser (0.1.1)
  - Scale (1.x.x)
