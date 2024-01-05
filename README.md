@@ -2,7 +2,7 @@
 SageMode is a python library for deploying, scaling, and monitoring machine learning models and LLMs in particular at scale. It is native to AWS, which means that SageMode uses boto3 under the hood to interact with services like EC2, S3, SageMaker, and Lambda.
 
 # Problems SageMode solves
-✅ Standardized but also flexible deployments of both Huggingface and PyTorch models on either SageMaker or EC2.   
+   ✅ Standardized but also flexible deployments of both Huggingface and PyTorch models on either SageMaker or EC2.   
   - Custom pipelines for processing both pre and post inference are supported.   
   - You can deploy LLM models to AWS in as few as 5 lines of code!  
   - Wraps all inference endpoints around Lambda, meaning that scalability and low cost are built in.  
