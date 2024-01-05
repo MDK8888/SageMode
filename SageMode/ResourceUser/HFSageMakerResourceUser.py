@@ -19,7 +19,7 @@ class HFSageMakerResourceUser(ResourceUser):
     def __init__(self, instance_type:str ,next:dict[str, type] = None, previous:dict[str, type] = None, lambda_arn:LambdaArn = None):
         load_dotenv()
         role_arn = RoleArn(os.environ["SAGEMAKER_ROLE_ARN"])
-        super().__init__(role_arn, next, previous)
+        super().__init__(role_arn, previous, next)
         self.instance_type = instance_type
         self.lambda_user = SageMakerLambdaResourceUser(lambda_arn)  
     

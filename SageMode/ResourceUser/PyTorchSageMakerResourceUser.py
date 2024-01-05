@@ -21,7 +21,7 @@ class PyTorchSageMakerResourceUser(ResourceUser):
                  lambda_arn:LambdaArn = None):
         load_dotenv()
         role_arn = RoleArn(os.environ["SAGEMAKER_ROLE_ARN"])
-        super().__init__(role_arn, next, previous)
+        super().__init__(role_arn, previous, next)
         self.instance_type = instance_type
         self.lambda_user = SageMakerLambdaResourceUser(lambda_arn)  
     
