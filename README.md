@@ -53,6 +53,7 @@ If you like this project, give it a star ⭐! It helps out a lot 😁
      	]
      }
       ```
+  (Will come back and finish this later today)
  # Documentation
  ![image](https://github.com/MDK8888/SageMode/assets/79173446/b3be1ce0-8fb8-4b0a-a729-c64afb348685)
  - Documentation will be coming very soon. However, in the meantime, check out the examples folder! To run any example, just create a python file in your virtual environment, copy and paste the example code in, and run it.
