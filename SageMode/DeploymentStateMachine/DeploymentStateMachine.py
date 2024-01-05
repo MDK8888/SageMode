@@ -3,7 +3,7 @@ import time
 import json
 from dotenv import load_dotenv
 from sagemode.ResourceUser.ResourceUser import ResourceUser
-from Types.Arn import *
+from sagemode.Types.Arn import *
 
 class DeploymentStateMachine(ResourceUser):
 

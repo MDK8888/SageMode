@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from typing import Callable
 import torch
 import paramiko
-from Types.Arn import *
+from sagemode.Types.Arn import *
 from sagemode.ResourceUser.ResourceUser import ResourceUser
 from sagemode.ResourceUser.LambdaResourceUser.EC2LambdaResourceUser import EC2LambdaResourceUser
 from sagemode.Helpers.WriteFunctionToFile import write_function_to_file

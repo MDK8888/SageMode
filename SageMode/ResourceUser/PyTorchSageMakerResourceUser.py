@@ -6,7 +6,6 @@ import sagemaker
 from sagemaker.s3 import S3Uploader
 from dotenv import load_dotenv
 from sagemaker.pytorch import PyTorchModel
-from sagemode.Types.HFModels import model_types
 from sagemode.ResourceUser import ResourceUser
 from sagemode.ResourceUser.LambdaResourceUser.SageMakerLambdaResourceUser import SageMakerLambdaResourceUser 
 from sagemode.Types.Arn import *
