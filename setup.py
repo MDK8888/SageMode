@@ -14,7 +14,7 @@ setup(
     version='0.1.0',
     author="MDK8888",
     description="Deploy, scale, and monitor your ML models all with one click. Native to AWS.",
-    packages=find_packages(where="SageMode"),
+    packages=find_packages(),
     install_requires=parse_requirements('requirements.txt'),
     license="Apache License 2.0",
     package_data={
