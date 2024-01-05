@@ -9,3 +9,4 @@ EC2KeyPair.pem
 *_requirements.txt
 fish.jpg
 model.py
+test_venv
