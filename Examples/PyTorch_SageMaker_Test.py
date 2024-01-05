@@ -1,7 +1,7 @@
 import torch
 import torchvision.models as models
-from Types.IO import *
-from ResourceUser.PyTorchSageMakerResourceUser import PyTorchSageMakerResourceUser
+from sagemode.Types.IO import *
+from sagemode.ResourceUser.PyTorchSageMakerResourceUser import PyTorchSageMakerResourceUser
 import base64
 
 def save_resnet_18_weights_to_path(weight_path:str):
