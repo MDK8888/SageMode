@@ -21,7 +21,7 @@ SageMode is a python library for deploying, scaling, and monitoring machine lear
  ![image](https://github.com/MDK8888/SageMode/assets/79173446/b3be1ce0-8fb8-4b0a-a729-c64afb348685)
  - Documentation will be coming very soon. However, in the meantime, checkout the examples folder! To run any example, just create a python file in your virtual environment, copy and paste the example code in, and run it.
 
- # RoadMap
+ # Roadmap
  - Deploy
    - add rapid teardown of EC2 and SageMaker Resources (0.1.1)
    - if needed, add HFEC2ResourceUser (0.1.1)
