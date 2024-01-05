@@ -1,8 +1,13 @@
 from setuptools import setup, find_packages
+import string
 
 def parse_requirements(file_path):
-    with open(file_path, 'r', encoding="latin-1") as f:
-        return [line.strip() for line in f if line.strip()]
+    with open(file_path, 'r') as f:
+        requirements_string = f.read()
+        requirements_string = ''.join(filter(lambda x: x in string.printable, requirements_string))
+        requirements_list = requirements_string.split("\n")
+        requirements_list = [element for index, element in enumerate(requirements_list) if index % 2 == 0]
+        return requirements_list
 
 setup(
     name='sagemode',
