@@ -16,7 +16,7 @@ from sagemode.Helpers.FileCopy import *
 
 class HFSageMakerResourceUser(ResourceUser):
 
-    def __init__(self, instance_type:str ,next:dict[str, type] = None, previous:dict[str, type] = None, lambda_arn:LambdaArn = None):
+    def __init__(self, instance_type:str, previous:dict[str, type] = None, next:dict[str, type] = None, lambda_arn:LambdaArn = None):
         load_dotenv()
         role_arn = RoleArn(os.environ["SAGEMAKER_ROLE_ARN"])
         super().__init__(role_arn, previous, next)

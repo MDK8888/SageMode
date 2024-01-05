@@ -1,7 +1,7 @@
 import torch
 import torchvision.models as models
-from Types.IO import *
-from ResourceUser.PyTorchEC2ResourceUser import PyTorchEC2ResourceUser
+from sagemode.Types.IO import *
+from sagemode.ResourceUser.PyTorchEC2ResourceUser import PyTorchEC2ResourceUser
 import base64
 
 def save_resnet_18_weights_to_path(weight_path:str):
@@ -65,4 +65,3 @@ with open(image_path, "rb") as image_bytes:
 input = {"base64": base64_encoded, "parameters":None}
 
 print(user.use(input))
-
