@@ -6,12 +6,12 @@ import sagemaker
 from sagemaker.s3 import S3Uploader
 from dotenv import load_dotenv
 from sagemaker.pytorch import PyTorchModel
-from Types.HFModels import model_types
+from ..Types.HFModels import model_types
 from .ResourceUser import ResourceUser
 from .LambdaResourceUser.SageMakerLambdaResourceUser import SageMakerLambdaResourceUser 
 from Types.Arn import *
-from Helpers.FileCopy import *
-from Helpers.WriteFunctionToFile import write_function_to_file
+from ..Helpers.FileCopy import *
+from ..Helpers.WriteFunctionToFile import write_function_to_file
 
 class PyTorchSageMakerResourceUser(ResourceUser):
 

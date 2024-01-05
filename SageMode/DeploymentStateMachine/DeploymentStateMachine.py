@@ -2,7 +2,7 @@ import os
 import time
 import json
 from dotenv import load_dotenv
-from ResourceUser.ResourceUser import ResourceUser
+from ..ResourceUser.ResourceUser import ResourceUser
 from Types.Arn import *
 
 class DeploymentStateMachine(ResourceUser):

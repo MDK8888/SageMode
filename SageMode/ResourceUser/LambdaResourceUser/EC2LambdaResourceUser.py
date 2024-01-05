@@ -5,8 +5,8 @@ import zipfile
 import json
 from botocore.exceptions import ClientError
 from ..ResourceUser import ResourceUser
-from Types.Arn import *
-from Helpers.FileCopy import copy_file_to_directory
+from ..Types.Arn import *
+from ..Helpers.FileCopy import copy_file_to_directory
 
 class EC2LambdaResourceUser(ResourceUser):
 

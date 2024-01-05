@@ -4,8 +4,8 @@ import zipfile
 import json
 from dotenv import load_dotenv
 from ..ResourceUser import ResourceUser
-from Types.Arn import *
-from Helpers.FileCopy import copy_file_to_directory
+from ..Types.Arn import *
+from ..Helpers.FileCopy import copy_file_to_directory
 from botocore.exceptions import ClientError
 
 class SageMakerLambdaResourceUser(ResourceUser):
