@@ -3,7 +3,7 @@ import time
 import zipfile
 import json
 from dotenv import load_dotenv
-from sagemode.ResourceUser import ResourceUser
+from sagemode.ResourceUser.ResourceUser import ResourceUser
 from sagemode.Types.Arn import *
 from sagemode.Helpers.FileCopy import copy_file_to_directory
 from botocore.exceptions import ClientError
