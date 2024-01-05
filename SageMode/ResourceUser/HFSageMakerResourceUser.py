@@ -8,11 +8,11 @@ from dotenv import load_dotenv
 from shutil import rmtree, copytree
 from huggingface_hub import snapshot_download
 from sagemaker.huggingface.model import HuggingFaceModel
-from ..Types.HFModels import model_types
-from .ResourceUser import ResourceUser
-from .LambdaResourceUser.SageMakerLambdaResourceUser import SageMakerLambdaResourceUser 
-from ..Types.Arn import *
-from ..Helpers.FileCopy import *
+from sagemode.Types.HFModels import model_types
+from sagemode.ResourceUser.ResourceUser import ResourceUser
+from sagemode.LambdaResourceUser.SageMakerLambdaResourceUser import SageMakerLambdaResourceUser 
+from sagemode.Types.Arn import *
+from sagemode.Helpers.FileCopy import *
 
 class HFSageMakerResourceUser(ResourceUser):
 

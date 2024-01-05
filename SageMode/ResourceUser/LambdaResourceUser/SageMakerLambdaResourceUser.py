@@ -3,9 +3,9 @@ import time
 import zipfile
 import json
 from dotenv import load_dotenv
-from ..ResourceUser import ResourceUser
-from ..Types.Arn import *
-from ..Helpers.FileCopy import copy_file_to_directory
+from sagemode.ResourceUser import ResourceUser
+from sagemode.Types.Arn import *
+from sagemode.Helpers.FileCopy import copy_file_to_directory
 from botocore.exceptions import ClientError
 
 class SageMakerLambdaResourceUser(ResourceUser):

@@ -5,12 +5,12 @@ from typing import Callable
 import torch
 import paramiko
 from Types.Arn import *
-from .ResourceUser import ResourceUser
-from .LambdaResourceUser.EC2LambdaResourceUser import EC2LambdaResourceUser
-from ..Helpers.WriteFunctionToFile import write_function_to_file
-from ..Helpers.FileCopy import copy_file_to_directory
-from ..Helpers.UploadToRemote import upload_directory
-from ..Helpers.SSHConnect import wait_for_ssh_connection
+from sagemode.ResourceUser.ResourceUser import ResourceUser
+from sagemode.ResourceUser.LambdaResourceUser.EC2LambdaResourceUser import EC2LambdaResourceUser
+from sagemode.Helpers.WriteFunctionToFile import write_function_to_file
+from sagemode.Helpers.FileCopy import copy_file_to_directory
+from sagemode.Helpers.UploadToRemote import upload_directory
+from sagemode.Helpers.SSHConnect import wait_for_ssh_connection
 
 class PyTorchEC2ResourceUser(ResourceUser):
 

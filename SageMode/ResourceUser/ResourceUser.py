@@ -1,9 +1,9 @@
 import os
 import boto3
 from dotenv import load_dotenv
-from ..Types.Arn import *
+from sagemode.Types.Arn import *
 from abc import ABC, abstractmethod
-from ..Helpers.TypeChecking import *
+from sagemode.Helpers.TypeChecking import *
 
 class ResourceUser(ABC):
 
