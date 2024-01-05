@@ -7,6 +7,6 @@ def parse_requirements(file_path):
 setup(
     name='sagemode',
     version='0.1.0',
-    packages=find_packages(),
+    packages=find_packages(where="SageMode"),
     install_requires=parse_requirements('requirements.txt')
 )
