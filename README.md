@@ -81,16 +81,16 @@ Congratulations! We are now going to move away from users and move on to creatin
               },
               "Action": "sts:AssumeRole"
           }
-      ]
+        ]
       }
-    ```
+     ```
   5. Scroll down and click on the orange 'Update policy' button.
   6. You should now be back on the main page for your role. Click on 'Add permissions' and then click on 'Attach policies' this time.
   7. Search for the 'AutoScalingFullAccess' policy, select the checkbox next to it, and then click on the orange 'Add permissions' button.
   8. Finally, click on 'Add permissions', click on the 'Create inline policy' button.
   9. Between 'Visual' and 'JSON', click on 'JSON' and paste the following JSON in:
      ```
-      {
+     {
           "Version": "2012-10-17",
           "Statement": [
               {
@@ -100,7 +100,7 @@ Congratulations! We are now going to move away from users and move on to creatin
                   "Resource": "*"
               }
           ]
-       }
+     }
      ```
   10. Click on the orange 'Next' button in the bottom right.
   11. Come up with a name for your Policy, and then click on the orange 'Create policy' button.
