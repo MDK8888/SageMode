@@ -134,7 +134,7 @@ You are now ready to move on to tohe documentation section! Sincere apologies fo
    - Clean up the codebase and lint (0.1.1)
    - add CI/CD workflows
    - add pytest
-   - add a sick icon (0.1.1)
+   - add a cool sick icon (0.1.1)
 
 
 
