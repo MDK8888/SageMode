@@ -51,10 +51,10 @@ If you like this project, give it a star ⭐! It helps out a lot 😁
   11. Scroll down and click the orange 'Next' button.
   12. Enter a meaningful name for your policy, and then click on the orange 'Create policy' [button](https://github.com/MDK8888/SageMode/assets/79173446/eb309043-c255-44fb-bc86-d69e8a808e92).
   13. You should now be back on this [page](https://github.com/MDK8888/SageMode/assets/79173446/3680c0c8-4132-488e-aa07-2bf6561fc1d3)-click on the 'Create access key' button.
-  14. On the next page, you will be given several options indicating what you are going to use your access key for. Select 'Local code' and then click on the 'Next' [button]!(https://github.com/MDK8888/SageMode/assets/79173446/7ddb6d5a-5086-46f6-a66a-9725263b83b7).
+  14. On the next page, you will be given several options indicating what you are going to use your access key for. Select 'Local code' and then click on the 'Next' [button](https://github.com/MDK8888/SageMode/assets/79173446/7ddb6d5a-5086-46f6-a66a-9725263b83b7).
   15. The next page is optional - click on the orange 'Create access key' button in the bottom right.
   16. On the next page, you should get an option to download your access key and secret access key as a .csv [file](https://github.com/MDK8888/SageMode/assets/79173446/dd8abc01-3f6e-4abf-8b87-092e8b11ff67). Click on the 'Download .csv file' button.
-. 17. In the directory where you have sagemode installed, create a .env file and create the following:
+  17. In the directory where you have sagemode installed, create a .env file and create the following:
       ```
       AWS_ACCESS_KEY_ID={access key ID from .csv file}
       AWS_SECRET_ACCESS_KEY={Secret access key from .csv file}
