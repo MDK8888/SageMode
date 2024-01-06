@@ -83,7 +83,7 @@ Congratulations! We are now going to move away from users and move on to creatin
           }
       ]
     }
-     ```
+    ```
   5. Scroll down and click on the orange 'Update policy' button.
   6. You should now be back on the main page for your role. Click on 'Add permissions' and then click on 'Attach policies' this time.
   7. Search for the 'AutoScalingFullAccess' policy, select the checkbox next to it, and then click on the orange 'Add permissions' button.
@@ -134,6 +134,7 @@ You are now ready to move on to tohe documentation section! Sincere apologies fo
    - Clean up the codebase and lint (0.1.1)
    - add CI/CD workflows
    - add pytest
+   - add a sick icon (0.1.1)
 
 
 
