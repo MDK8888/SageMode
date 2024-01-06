@@ -59,7 +59,7 @@ If you like this project, give it a star ⭐! It helps out a lot 😁
       AWS_ACCESS_KEY_ID={access key ID from .csv file}
       AWS_SECRET_ACCESS_KEY={Secret access key from .csv file}
       AWS_REGION={your aws region}
-.     ```
+      ```
 Congratulations! We are now going to move away from users and move on to creating two roles, one which is responsible for using SageMaker, AWS's service for machine learning, and another for Lambda, AWS's service for serverless compute.
 
 - Role Configuration:
