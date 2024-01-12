@@ -1,8 +1,8 @@
 import base64
-from Types.Arn import *
-from ResourceUser.HFSageMakerResourceUser import *
-from DeploymentStateMachine.DeploymentStateMachine import *
-from Types.IO import IOTypes
+from sagemode.Types.Arn import *
+from sagemode.ResourceUser.HFSageMakerResourceUser import *
+from sagemode.DeploymentStateMachine.DeploymentStateMachine import *
+from sagemode.Types.IO import IOTypes
 
 users = [None, None]
 users[0] = HFSageMakerResourceUser("ml.g5.xlarge", IOTypes.LanguageModeling, IOTypes.LanguageModeling)
