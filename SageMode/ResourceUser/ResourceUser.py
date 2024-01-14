@@ -7,16 +7,12 @@ from sagemode.Helpers.TypeChecking import *
 
 class ResourceUser(ABC):
 
-    def __init__(self, role_arn:RoleArn, previous:dict[str, type]=None, next:dict[str, type]=None):
+    def __init__(self, role_arn:RoleArn):
         load_dotenv()
         self.role_arn = role_arn
         self.access_key_id = os.environ["AWS_ACCESS_KEY_ID"]
         self.secret_access_key = os.environ["AWS_SECRET_ACCESS_KEY"]
         self.boto3_session = boto3.Session(self.access_key_id, self.secret_access_key)
-        if previous != None:
-            self.previous = previous
-        if next != None:
-            self.next = next
         self.login()
 
     def __set_boto3_credentials(self, credentials:dict):

@@ -16,11 +16,10 @@ from sagemode.Helpers import copy_file_to_directory
 
 class HFSageMakerResourceUser(ResourceUser):
 
-    def __init__(self, instance_type:str, previous:dict[str, type] = None, next:dict[str, type] = None, lambda_arn:LambdaArn = None):
+    def __init__(self, lambda_arn:LambdaArn = None):
         load_dotenv(override=True)
         role_arn = RoleArn(os.environ["SAGEMAKER_ROLE_ARN"])
-        super().__init__(role_arn, previous, next)
-        self.instance_type = instance_type
+        super().__init__(role_arn)
         self.lambda_user = SageMakerLambdaResourceUser(lambda_arn)  
     
     def create_bucket(self) -> None:
@@ -92,15 +91,14 @@ class HFSageMakerResourceUser(ResourceUser):
             print(f"upload to s3 finished successfully. Time taken: {time.time() - t_start:.2f} seconds")
 
     def deploy(self, model_id:str, 
-                    function_name:str,  
-                    skip_download=False,
-                    skip_compression=False, 
-                    skip_upload=False, 
-                    lambda_python_version:str="3.8",
-                    timeout:int=3, 
-                    deployment_config:dict={"transformers_version":"4.26", 
-                                            "pytorch_version":"1.13", 
-                                            "python_version":"py39"}) -> LambdaArn:
+                     function_name:str,  
+                     skip_download:bool = False,
+                     skip_compression:bool = False, 
+                     skip_upload:bool = False, 
+                     lambda_deployment_env_config:dict = {"python_version":"3.8", "timeout":3}, 
+                     sagemaker_deployment_env_config:dict = {"transformers_version":"4.26", 
+                                                             "pytorch_version":"1.13", 
+                                                             "python_version":"py39"}) -> LambdaArn:
         if self.lambda_user.function_arn:
             raise ValueError("We cannot call 'deploy' if the lambda_user already has a function_arn - set 'self.lambda_user.function_arn = None' and try again.")
         
@@ -110,7 +108,7 @@ class HFSageMakerResourceUser(ResourceUser):
         self.upload_to_s3(skip_upload)
 
         transformers_version, pytorch_version, python_version = \
-        deployment_config["transformers_version"], deployment_config["pytorch_version"], deployment_config["python_version"]
+        sagemaker_deployment_env_config["transformers_version"], sagemaker_deployment_env_config["pytorch_version"], sagemaker_deployment_env_config["python_version"]
 
         huggingface_model = HuggingFaceModel(
         model_data=self.model_uri,      # path to your model and script
@@ -125,7 +123,7 @@ class HFSageMakerResourceUser(ResourceUser):
         initial_instance_count=1,
         instance_type=self.instance_type
         )
-        function_arn:LambdaArn = self.lambda_user.deploy(function_name, predictor.endpoint_name, lambda_python_version, timeout)
+        function_arn:LambdaArn = self.lambda_user.deploy(function_name, predictor.endpoint_name, lambda_deployment_env_config)
         print(f"Deployment to SageMaker finished successfully. Time taken: {time.time() - t_start:.2f} seconds")
         return function_arn
     

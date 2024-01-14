@@ -26,7 +26,7 @@ class SageMakerLambdaResourceUser(ResourceUser):
             zipped.close()
         os.remove(f"{lambda_function_file_name}.py")
 
-    def deploy(self, function_name:str, endpoint_name:str=None, python_version:str="3.8", timeout:int=3) -> LambdaArn:
+    def deploy(self, function_name:str, endpoint_name:str=None, lambda_deployment_config:dict={"python_version":"3.8", "timeout":3}) -> LambdaArn:
         if self.function_arn:
             raise ValueError("This object cannot call 'deploy' if it already has a function_arn - set 'self.function_arn = None' and try again.")
         
@@ -35,6 +35,9 @@ class SageMakerLambdaResourceUser(ResourceUser):
         self.zip_lambda_file(lambda_function_file_path)
         if endpoint_name is None:
             endpoint_name = os.environ["ENDPOINT_NAME"]
+
+        python_version = lambda_deployment_config["python_version"]
+        timeout = lambda_deployment_config["timeout"]
 
         response = self.lambda_client.create_function(
             FunctionName=function_name,
