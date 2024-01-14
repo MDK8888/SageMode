@@ -13,3 +13,4 @@ test_venv
 build
 dist
 sagemode.egg-info
+config.py

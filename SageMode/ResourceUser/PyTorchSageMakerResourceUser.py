@@ -20,7 +20,7 @@ class PyTorchSageMakerResourceUser(ResourceUser):
                  next:dict[str, type] = None, 
                  lambda_arn:LambdaArn = None):
 
-        load_dotenv()
+        load_dotenv(override=True)
         role_arn = RoleArn(os.environ["SAGEMAKER_ROLE_ARN"])
         super().__init__(role_arn, previous, next)
         self.instance_type = instance_type
