@@ -10,7 +10,7 @@ from sagemode.ResourceUser.ResourceUser import ResourceUser
 from sagemode.ResourceUser.LambdaResourceUser.SageMakerLambdaResourceUser import SageMakerLambdaResourceUser 
 from sagemode.Types.Arn import *
 from sagemode.Helpers.FileCopy import *
-from sagemode.Helpers.WriteFunctionToFile import write_function_to_file
+from sagemode.Helpers import write_function_to_file
 
 class PyTorchSageMakerResourceUser(ResourceUser):
 
@@ -19,6 +19,7 @@ class PyTorchSageMakerResourceUser(ResourceUser):
                  previous:dict[str, type] = None, 
                  next:dict[str, type] = None, 
                  lambda_arn:LambdaArn = None):
+
         load_dotenv()
         role_arn = RoleArn(os.environ["SAGEMAKER_ROLE_ARN"])
         super().__init__(role_arn, previous, next)

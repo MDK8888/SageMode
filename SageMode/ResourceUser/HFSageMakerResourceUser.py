@@ -12,12 +12,12 @@ from sagemode.Types.HFModels import model_types
 from sagemode.ResourceUser.ResourceUser import ResourceUser
 from sagemode.ResourceUser.LambdaResourceUser.SageMakerLambdaResourceUser import SageMakerLambdaResourceUser 
 from sagemode.Types.Arn import *
-from sagemode.Helpers.FileCopy import *
+from sagemode.Helpers import copy_file_to_directory
 
 class HFSageMakerResourceUser(ResourceUser):
 
     def __init__(self, instance_type:str, previous:dict[str, type] = None, next:dict[str, type] = None, lambda_arn:LambdaArn = None):
-        load_dotenv()
+        load_dotenv(override=True)
         role_arn = RoleArn(os.environ["SAGEMAKER_ROLE_ARN"])
         super().__init__(role_arn, previous, next)
         self.instance_type = instance_type
@@ -31,9 +31,16 @@ class HFSageMakerResourceUser(ResourceUser):
         except:
             raise Exception("Unable to create bucket for session. Double check to make sure that your session is not 'None.'")
 
-    def copy_from_huggingface(self, model_id:str) -> None:
+    def copy_from_huggingface(self, model_id:str, skip=False) -> None:
+        
         os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
         model_tar_dir = os.path.join(os.getcwd(), model_id.split("/")[-1])
+
+        if skip:
+            print("skipping copying from huggingface...")
+            self.model_dir = str(model_tar_dir)
+            return
+
         os.mkdir(model_tar_dir)
         t_start = time.time()
         local_inference_file_directory = os.path.join(os.getcwd(), "code")
@@ -86,6 +93,7 @@ class HFSageMakerResourceUser(ResourceUser):
 
     def deploy(self, model_id:str, 
                     function_name:str,  
+                    skip_download=False,
                     skip_compression=False, 
                     skip_upload=False, 
                     lambda_python_version:str="3.8",
@@ -97,7 +105,7 @@ class HFSageMakerResourceUser(ResourceUser):
             raise ValueError("We cannot call 'deploy' if the lambda_user already has a function_arn - set 'self.lambda_user.function_arn = None' and try again.")
         
         self.create_bucket()
-        self.copy_from_huggingface(model_id)
+        self.copy_from_huggingface(model_id, skip_download)
         self.compress("model.tar.gz", skip_compression)
         self.upload_to_s3(skip_upload)
 

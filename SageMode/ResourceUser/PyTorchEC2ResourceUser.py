@@ -8,14 +8,15 @@ from sagemode.Types.Arn import *
 from sagemode.ResourceUser.ResourceUser import ResourceUser
 from sagemode.ResourceUser.LambdaResourceUser.EC2LambdaResourceUser import EC2LambdaResourceUser
 from sagemode.Helpers.WriteFunctionToFile import write_function_to_file
-from sagemode.Helpers.FileCopy import copy_file_to_directory
-from sagemode.Helpers.UploadToRemote import upload_directory
-from sagemode.Helpers.SSHConnect import wait_for_ssh_connection
+from sagemode.Helpers import copy_file_to_directory
+from sagemode.Helpers import upload_directory
+from sagemode.Helpers import wait_for_ssh_connection
 
 class PyTorchEC2ResourceUser(ResourceUser):
 
     def __init__(self, instance_type:str, previous:dict[str, type] = None, next:dict[str, type] = None, lambda_function_arn:LambdaArn = None):
-        load_dotenv()
+
+        load_dotenv(override=True)
         role_arn = RoleArn(os.environ["EC2_ROLE_ARN"])
         super().__init__(role_arn, previous, next)
         self.instance_type = instance_type
