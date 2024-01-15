@@ -58,3 +58,7 @@ class ResourceUser(ABC):
     @abstractmethod
     def use(self):
         pass
+
+    @abstractmethod
+    def teardown(self):
+        pass

@@ -11,7 +11,7 @@ from botocore.exceptions import ClientError
 class SageMakerLambdaResourceUser(ResourceUser):
 
     def __init__(self, function_arn:LambdaArn=None):
-        load_dotenv()
+        load_dotenv(override=True)
         role_arn = RoleArn(os.environ["LAMBDA_ROLE_ARN"])
         super().__init__(role_arn)
         self.function_arn = function_arn
@@ -88,3 +88,20 @@ class SageMakerLambdaResourceUser(ResourceUser):
             except ClientError as e:
                 print(f"An error occurred: {e}")
                 break
+    
+    def get_env(self):
+        if not self.function_arn:
+            raise ValueError("You did not initialize your SageMakerResourceUser with a lambdaArn.")
+        function_name = self.function_arn.resource.split(":")[-1]
+        configuration = self.lambda_client.get_function_configuration(FunctionName=function_name)        
+        environment_variables = configuration['Environment']['Variables']
+        return environment_variables
+    
+    def teardown(self):
+        if not self.function_arn:
+            raise ValueError("You did not initialize your SageMakerResourceUser with a lambdaArn.")
+        function_name = self.function_arn.resource.split(":")[-1]
+        self.lambda_client.delete_function(FunctionName=function_name)
+        print("Your lambda function has been deleted.")
+
+

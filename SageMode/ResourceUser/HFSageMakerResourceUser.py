@@ -5,7 +5,6 @@ import tarfile
 import sagemaker
 from sagemaker.s3 import S3Uploader
 from dotenv import load_dotenv
-from shutil import rmtree, copytree
 from huggingface_hub import snapshot_download
 from sagemaker.huggingface.model import HuggingFaceModel
 from sagemode.Types.HFModels import model_types
@@ -31,13 +30,19 @@ class HFSageMakerResourceUser(ResourceUser):
         except:
             raise Exception("Unable to create bucket for session. Double check to make sure that your session is not 'None.'")
     
-    def set_io_type(self, classname:str) -> None:
-        if classname.startswith("AutoModel"):
-            self.previous = IOTypes.LanguageModeling
-            self.next = IOTypes.LanguageModeling
-        else:
-            self.prevous = IOTypes.ImageModeling
-            self.next = IOTypes.LanguageModeling
+    def set_io_type(self, model_id:str) -> None:
+        for model_class in model_types:
+            try:
+                model_class.from_pretrained(model_id)
+                model_name = model_class.__name__
+                if model_name.startswith("AutoModel"):
+                    self.previous = IOTypes.LanguageModeling
+                    self.next = IOTypes.LanguageModeling
+                elif model_name.startswith("StableDiffusion"):
+                    self.previous = IOTypes.LanguageModeling
+                    self.next = IOTypes.ImageModeling
+            except:
+                continue
 
     def copy_from_huggingface(self, model_id:str, skip=False) -> None:
         
@@ -47,7 +52,6 @@ class HFSageMakerResourceUser(ResourceUser):
             try:
                 model_class.from_pretrained(model_id)
                 model_name = model_class.__name__
-                self.set_io_type(model_name)
                 inference_file_name = model_name
                 inference_file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'InferenceFiles', 'HFSageMaker', f"{inference_file_name}.py")
                 if skip:
@@ -56,7 +60,7 @@ class HFSageMakerResourceUser(ResourceUser):
                     os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
                     os.mkdir(model_tar_dir)
                     t_start = time.time()                 
-                    
+
                     try:
                         snapshot_download(model_id, local_dir=str(model_tar_dir), local_dir_use_symlinks=False)
                         print(f"Huggingface model copied successfully. Time taken: {time.time() - t_start:.2f} seconds")
@@ -116,6 +120,7 @@ class HFSageMakerResourceUser(ResourceUser):
 
         self.create_bucket()
         self.copy_from_huggingface(model_id, skip_download)
+        self.set_io_type(model_id)
         self.compress("model.tar.gz", skip_compression)
         self.upload_to_s3(skip_upload)
 
@@ -146,3 +151,13 @@ class HFSageMakerResourceUser(ResourceUser):
         response = self.lambda_user.use(data)
         self.check_output(response)
         return response
+    
+    def teardown(self):
+        lambda_environment_variables = self.lambda_user.get_env()
+        self.lambda_user.teardown()
+        sagemaker_endpoint_name = lambda_environment_variables["ENDPOINT_NAME"]
+
+        sagemaker_client = self.boto3_session.client("sagemaker")
+        sagemaker_client.delete_endpoint(EndpointName=sagemaker_endpoint_name)
+
+        print("Your SageMaker endpoint has been deleted.")
