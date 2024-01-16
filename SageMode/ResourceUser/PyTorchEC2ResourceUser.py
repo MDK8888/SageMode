@@ -195,4 +195,19 @@ class PyTorchEC2ResourceUser(ResourceUser):
         return response
 
     def teardown(self):
-        pass
+        lambda_environment_variables = self.lambda_user.get_env()
+        self.lambda_user.teardown()
+
+        public_dns = lambda_environment_variables["DNS_NAME"]
+        response = self.ec2_client.describe_instances(Filters=[{'Name': 'dns-name', 'Values': [public_dns]}])
+        if 'Reservations' in response and response['Reservations']:
+            instance_id = response['Reservations'][0]['Instances'][0]['InstanceId']
+
+            # Terminate the instance
+            self.ec2_client.terminate_instances(InstanceIds=[instance_id])
+
+            # Print the termination response
+            print("Your EC2 instance has been successfully deleted.")
+        else:
+            print(f"No instances found with DNS name: {public_dns}")
+

@@ -100,5 +100,17 @@ class EC2LambdaResourceUser(ResourceUser):
                 print(f"An error occurred: {e}")
                 break
     
+    def get_env(self):
+        if not self.function_arn:
+            raise ValueError("You did not initialize your EC2LambdaResourceUser with a lambdaArn.")
+        function_name = self.function_arn.resource.split(":")[-1]
+        configuration = self.lambda_client.get_function_configuration(FunctionName=function_name)        
+        environment_variables = configuration['Environment']['Variables']
+        return environment_variables
+
     def teardown(self):
-        pass
+        if not self.function_arn:
+            raise ValueError("You did not initialize your EC2LambdaResourceUser with a lambdaArn.")
+        function_name = self.function_arn.resource.split(":")[-1]
+        self.lambda_client.delete_function(FunctionName=function_name)
+        print("Your lambda function has been deleted.")
