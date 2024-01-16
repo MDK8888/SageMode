@@ -95,7 +95,7 @@ class HFSageMakerResourceUser(ResourceUser):
         s3_model_dir = os.path.basename(self.model_dir)
         s3_output_file = os.path.basename(self.output_file)
         if skip:
-            print("You have chosen to skip uploading to s3. Skipping this step...")
+            print("You have selected to skip uploading to s3. Skipping this step...")
             self.model_uri = f"s3://{self.bucket}/{s3_model_dir}/{s3_output_file}"
         else:
             t_start = time.time()
@@ -110,7 +110,8 @@ class HFSageMakerResourceUser(ResourceUser):
                                                   "pytorch_version":"1.13", 
                                                   "python_version":"py39"},
                      lambda_function_name:str = "lambda",  
-                     lambda_env_config:dict = {"python_version":"3.8", "timeout":3}) -> LambdaArn:
+                     lambda_env_config:dict = {"python_version":"3.8", "timeout":3}
+                    ) -> LambdaArn:
         if self.lambda_user.function_arn:
             raise ValueError("We cannot call 'deploy' if the lambda_user already has a function_arn - set 'self.lambda_user.function_arn = None' and try again.")
         

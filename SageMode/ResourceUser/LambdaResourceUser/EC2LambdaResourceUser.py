@@ -99,3 +99,6 @@ class EC2LambdaResourceUser(ResourceUser):
             except ClientError as e:
                 print(f"An error occurred: {e}")
                 break
+    
+    def teardown(self):
+        pass

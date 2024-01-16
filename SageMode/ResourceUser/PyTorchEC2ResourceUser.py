@@ -14,20 +14,24 @@ from sagemode.Helpers import wait_for_ssh_connection
 
 class PyTorchEC2ResourceUser(ResourceUser):
 
-    def __init__(self, instance_type:str, previous:dict[str, type] = None, next:dict[str, type] = None, lambda_function_arn:LambdaArn = None):
+    def __init__(self, lambda_function_arn:LambdaArn = None):
 
         load_dotenv(override=True)
         role_arn = RoleArn(os.environ["EC2_ROLE_ARN"])
-        super().__init__(role_arn, previous, next)
-        self.instance_type = instance_type
+        super().__init__(role_arn)
         self.ec2_client = self.boto3_session.client("ec2", region_name=os.environ["AWS_REGION"])
         self.lambda_user = EC2LambdaResourceUser(lambda_function_arn)
 
     def create_local_ec2_directory(self, model_path:str, 
-                            weight_path:str, 
-                            pre_process:Callable[[dict], torch.Tensor], 
-                            post_process:Callable[[torch.Tensor], dict], 
-                            requirements_path:str = "requirements.txt") -> None:
+                                        weight_path:str, 
+                                        pre_process:Callable[[dict], torch.Tensor], 
+                                        post_process:Callable[[torch.Tensor], dict], 
+                                        requirements_path:str = "requirements.txt", 
+                                        skip=False) -> None:
+        
+        if skip:
+            print("You have selected to skip creating the local directory. Skipping this step...")
+            return
 
         ec2_inference_path = os.path.join(os.getcwd(), "EC2InferenceLocal")
         os.mkdir(ec2_inference_path)
@@ -58,12 +62,19 @@ class PyTorchEC2ResourceUser(ResourceUser):
         absolute_requirements_path = f"{os.getcwd()}/{requirements_path}"
         copy_file_to_directory(absolute_requirements_path, ec2_inference_path, ec2_requirements_path)
         
-    def create_container_and_get_dns(self, ami_id:str) -> str:
+    def create_container_and_get_dns(self, ami_id:str, instance_type:str, container_dns:str=None, skip=False) -> str:
+        if skip:
+            if container_dns == None:
+                raise ValueError("If you are selecting to skip creating your container, you must specify the dns of an already existing container.")
+            
+            print("You have selected to skip creating your container. Skipping this step.")
+            return container_dns
+
         instance_id = self.ec2_client.run_instances(
         ImageId=ami_id,  # Specify the AMI ID
         MinCount=1,
         MaxCount=1,
-        InstanceType=self.instance_type,  # Specify the instance type
+        InstanceType=instance_type,  # Specify the instance type
         KeyName=os.environ["EC2_KEY_PAIR_NAME"],  # Specify your key pair
         SecurityGroupIds=[os.environ["SECURITY_GROUP_ID"]]
         )["Instances"][0]["InstanceId"]
@@ -81,9 +92,13 @@ class PyTorchEC2ResourceUser(ResourceUser):
 
         return public_dns
 
-    def upload_directory_to_ec2(self, public_dns:str):
+    def upload_directory_to_ec2(self, public_dns:str, skip=True):
         ssh_client = paramiko.SSHClient()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+        if skip:
+            print("You have selected to skip uploading your directory to your ec2 instance. Skipping this step...")
+            return
 
         max_retries = 3
         timeout = 5
@@ -116,13 +131,14 @@ class PyTorchEC2ResourceUser(ResourceUser):
 
         wait_for_ssh_connection(ssh_client, "ec2-user", max_retries, timeout, public_dns)
 
-        print("Connection between local machine and ec2 instance established. Executing commands...")
+        print("Connection between local machine and ec2 instance established. The console output will now reflect your EC2 instance.")
 
         commands = [
             'sudo yum update',
             'sudo yum install -y python3 python3-pip',
             'python3 --version',
             f'cd EC2Inference && pip install -r requirements.txt && (nohup uvicorn main:app --host 0.0.0.0 --port {port} > output.log 2>&1 & disown)',  # Start FastAPI server
+            'cat output.log'
         ]
 
         for command in commands:
@@ -135,22 +151,29 @@ class PyTorchEC2ResourceUser(ResourceUser):
         # Close the SSH connection
         ssh_client.close()
 
-    def deploy(self, ami_id: str, 
-                    model_path:str, 
-                    weight_path:str, 
-                    pre_process:Callable[[dict], torch.Tensor], 
-                    post_process:Callable[[torch.Tensor], dict], 
-                    lambda_function_name:str,
-                    lambda_python_pip_prefix:list[str] = ["pip"],
-                    ec2_requirements_path:str = "requirements.txt", 
+    def deploy(self,ami_id:str,
+                    instance_type:str,
+                    skips:list[str],
+                    ec2_server_config:dict,
+                    functions_dict:dict[str, Callable],
+                    lambda_function_name:str = "lambda",
+                    lambda_python_pip_prefix:list[str] = ["pip"] 
                     ) -> LambdaArn:
                 
         if self.lambda_user.function_arn:
             raise ValueError("We cannot call 'deploy' if the lambda_user already has a function_arn - set 'self.lambda_user.function_arn = None' and try again.")
         
-        self.create_local_ec2_directory(model_path, weight_path, pre_process, post_process, ec2_requirements_path)
-        public_dns = self.create_container_and_get_dns(ami_id)
-        self.upload_directory_to_ec2(public_dns)
+        pre_process, post_process = functions_dict["pre_process"], functions_dict["post_process"]
+        model_path, weight_path, ec2_requirements_path, container_dns = \
+            ec2_server_config["model_path"], ec2_server_config["weight_path"], ec2_server_config["requirements_path"], ec2_server_config.get("container_dns", None)
+
+        skip_create_directory = "create_directory" in skips
+        skip_create_container = "create_container" in skips
+        skip_upload_directory = "upload_directory" in skips
+
+        self.create_local_ec2_directory(model_path, weight_path, pre_process, post_process, ec2_requirements_path, skip_create_directory)
+        public_dns = self.create_container_and_get_dns(ami_id, instance_type, container_dns, skip_create_container)
+        self.upload_directory_to_ec2(public_dns, skip_upload_directory)
         self.run_server(public_dns)
 
         print("Server started on EC2 instance. Creating Lambda function...")
@@ -160,7 +183,7 @@ class PyTorchEC2ResourceUser(ResourceUser):
                                                          8000, 
                                                          lambda_python_pip_prefix
                                                          )
-        print("Lambda function created. Deployment to ec2 complete.")
+        print("Lambda function created. Deployment to EC2 complete.")
         return function_arn
     
     def use(self, data:dict):
@@ -170,3 +193,6 @@ class PyTorchEC2ResourceUser(ResourceUser):
         response = self.lambda_user.use(data)
         self.check_output(response)
         return response
+
+    def teardown(self):
+        pass
