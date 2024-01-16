@@ -12,7 +12,7 @@ app = FastAPI()
 
 @app.post("/predict")
 def predict(data:dict) -> dict:
-    pre_process_result = pre_process(data)
-    raw_output = model(pre_process_result)
+    kwargs = pre_process(data)
+    raw_output = model(**kwargs)
     post_process_result = post_process(raw_output)
     return post_process_result
