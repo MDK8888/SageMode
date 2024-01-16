@@ -1,7 +1,7 @@
 import torch
 import torchvision.models as models
 from sagemode.Types.IO import *
-from sagemode.ResourceUser.PyTorchEC2ResourceUser import PyTorchEC2ResourceUser
+from sagemode.ResourceUser import PyTorchEC2ResourceUser
 import base64
 
 def save_resnet_18_weights_to_path(weight_path:str):
@@ -39,21 +39,21 @@ def post_process(output) -> dict:
     output = output[0]
     return {"logits":output, "parameters":None}
 
+ami_id = "ami-0ee4f2271a4df2d7d"
+model_path = "model.py"
+requirements_path = "ec2_requirements.txt"
 resnet18_local_weight_path = "resnet18_weights.pth"
 save_resnet_18_weights_to_path(resnet18_local_weight_path)
 
-user = PyTorchEC2ResourceUser("d2.2xlarge", IOTypes.ImageModeling)
+user = PyTorchEC2ResourceUser()
 
-ami_id = "ami-0ee4f2271a4df2d7d"
-model_path = "model.py"
-user.deploy(ami_id, 
-            model_path, 
-            resnet18_local_weight_path, 
-            pre_process, 
-            post_process, 
-            "Resnet18Lambda", 
-            ["python", "-m", "pip"], 
-            "ec2_requirements.txt"
+user.deploy(ami_id=ami_id, 
+            instance_type="d2.2xlarge",
+            skips=[],
+            ec2_server_config={"model_path":model_path, "weight_path":resnet18_local_weight_path, "requirements_path":requirements_path},
+            functions_dict={"pre_process":pre_process, "post_process": post_process}, 
+            lambda_function_name="Resnet18Lambda", 
+            lambda_python_pip_prefix=["python", "-m", "pip"]
             )
 
 image_path = "fish.jpg"
@@ -65,3 +65,5 @@ with open(image_path, "rb") as image_bytes:
 input = {"base64": base64_encoded, "parameters":None}
 
 print(user.use(input))
+
+user.teardown()
