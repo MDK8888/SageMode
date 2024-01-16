@@ -40,15 +40,11 @@ class PyTorchEC2ResourceUser(ResourceUser):
         ec2_server_file_name = "main.py"
         copy_file_to_directory(server_code_path, ec2_inference_path, ec2_server_file_name)
 
-        pre_process_input_path = "pre_process.py"
-        absolute_pre_process_input_path = f"{os.getcwd()}/pre_process.py"
+        absolute_pre_process_input_path = f"{os.getcwd()}/EC2InferenceLocal/pre_process.py"
         write_function_to_file(pre_process, absolute_pre_process_input_path)
-        copy_file_to_directory(absolute_pre_process_input_path, ec2_inference_path, pre_process_input_path)
-        
-        post_process_output_path = "post_process.py"
-        absolute_post_process_output_path = f"{os.getcwd()}/post_process.py"
+
+        absolute_post_process_output_path = f"{os.getcwd()}/EC2InferenceLocal/post_process.py"
         write_function_to_file(post_process, absolute_post_process_output_path)
-        copy_file_to_directory(absolute_post_process_output_path, ec2_inference_path, post_process_output_path)
 
         ec2_weight_path = "weights.pth"
         absolute_weight_path = f"{os.getcwd()}/{weight_path}"

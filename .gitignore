@@ -5,7 +5,7 @@ aws_venv
 todo.txt
 Tests
 test.py
-EC2KeyPair.pem
+*.pem
 *_requirements.txt
 fish.jpg
 model.py
