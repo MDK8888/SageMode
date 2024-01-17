@@ -14,16 +14,11 @@ from sagemode.Helpers import write_function_to_file
 
 class PyTorchSageMakerResourceUser(ResourceUser):
 
-    def __init__(self, 
-                 instance_type:str, 
-                 previous:dict[str, type] = None, 
-                 next:dict[str, type] = None, 
-                 lambda_arn:LambdaArn = None):
+    def __init__(self, lambda_arn:LambdaArn = None):
 
         load_dotenv(override=True)
         role_arn = RoleArn(os.environ["SAGEMAKER_ROLE_ARN"])
-        super().__init__(role_arn, previous, next)
-        self.instance_type = instance_type
+        super().__init__(role_arn)
         self.lambda_user = SageMakerLambdaResourceUser(lambda_arn)  
     
     def create_bucket(self) -> None:
@@ -34,16 +29,20 @@ class PyTorchSageMakerResourceUser(ResourceUser):
         except:
             raise Exception("Unable to create bucket for session. Double check to make sure that your session is not 'None.'")
 
-    def make_inference_local_directory(self, functions_dict:dict[str, Callable], model_path:str, weight_path:str, requirements_path:str = "requirements.txt") -> None:
+    def make_inference_local_directory(self, functions_dict:dict[str, Callable], model_path:str, weight_path:str, requirements_path:str = "requirements.txt", skip=False) -> None:
         local_pytorch_directory_path = os.path.join(os.getcwd(), "PyTorchSageMaker")
         self.model_dir = str(local_pytorch_directory_path)
+        
+        if skip:
+            print("You have selected to skip compressing your directory. Skipping this step...")
+            return
+        
         os.mkdir(local_pytorch_directory_path)
 
         for file_name in functions_dict:
-            local_file_name = f"{os.getcwd()}/{file_name}.py"
+            pytorch_directory_file_name = f"{local_pytorch_directory_path}/{file_name}.py"
             fn = functions_dict[file_name]
-            write_function_to_file(fn, local_file_name)
-            copy_file_to_directory(local_file_name, local_pytorch_directory_path, f"{file_name}.py")
+            write_function_to_file(fn, pytorch_directory_file_name)
         
         entry_file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'InferenceFiles', "PyTorchSageMaker", "PyTorchSageMaker.py")
         sagemaker_entry_point = "entry.py"
@@ -90,47 +89,51 @@ class PyTorchSageMakerResourceUser(ResourceUser):
             self.model_uri = S3Uploader.upload(local_path=compressed_model_path, desired_s3_uri=f"s3://{self.bucket}/{s3_model_dir}")
             print(f"upload to s3 finished successfully. Time taken: {time.time() - t_start:.2f} seconds")
 
-    def deploy(self,function_name:str,
-                    functions_dict:dict[str, Callable],
-                    model_path:str = "model.py",
-                    weight_path:str = "weights.pth",
-                    skip_compression=False, 
-                    skip_upload=False, 
-                    lambda_python_version:str= "3.8",
-                    deployment_config:dict = {"python_version":"py38", "pytorch_version": "1.10"},
-                    requirements_path:str = "requirements.txt",
-                    timeout:int=3, 
+    def deploy(self, model_path:str,
+                     weight_path:str,
+                     instance_type:str,
+                     functions_dict: dict[str, Callable],
+                     skips:list[str] = [],
+                     sagemaker_env_config:dict[str, str] = {"python_version": "py38", "pytorch_version":"1.10", "requirements_path":"requirements.txt"}, 
+                     function_name:str = "lambda",
+                     lambda_env_config:dict[str, str] = {"python_version": "3.8", "timeout": 3}
                     ) -> LambdaArn:
+        
         if self.lambda_user.function_arn:
             raise ValueError("We cannot call 'deploy' if the lambda_user already has a function_arn - set 'self.lambda_user.function_arn = None' and try again.")
         
         t_start = time.time()
+    
+        sagemaker_python_version, sagemaker_pytorch_version, sagemaker_requirements_path = \
+            sagemaker_env_config["python_version"], sagemaker_env_config["pytorch_version"], sagemaker_env_config["requirements_path"]
+
+        skip_make_directory = "make_directory" in skips
+        skip_compression = "compression" in skips
+        skip_upload = "upload" in skips
 
         self.create_bucket()
-        self.make_inference_local_directory(functions_dict, model_path, weight_path, requirements_path)
+        self.make_inference_local_directory(functions_dict, model_path, weight_path, sagemaker_requirements_path, skip_make_directory)
         self.compress("model.tar.gz", skip_compression)
         self.upload_to_s3(skip_upload)
 
         entry_file_in_directory = "entry.py"
         local_pytorch_directory_path = "PyTorchSageMaker"
 
-        pytorch_version, python_version = deployment_config["pytorch_version"], deployment_config["python_version"]
-
         pytorch_model = PyTorchModel(
             model_data=self.model_uri,
             role=self.role_arn.raw_str,
-            framework_version=pytorch_version,
-            py_version=python_version,
+            framework_version=sagemaker_pytorch_version,
+            py_version=sagemaker_python_version,
             entry_point=f"{os.getcwd()}/{local_pytorch_directory_path}/{entry_file_in_directory}",
-            dependencies=[f"{os.getcwd()}/{requirements_path}"]
+            dependencies=[f"{os.getcwd()}/{sagemaker_requirements_path}"]
         )
 
         self.predictor = pytorch_model.deploy(
             initial_instance_count=1,
-            instance_type=self.instance_type
+            instance_type=instance_type
         )
         
-        function_arn:LambdaArn = self.lambda_user.deploy(function_name, self.predictor.endpoint_name, lambda_python_version, timeout)
+        function_arn:LambdaArn = self.lambda_user.deploy(function_name, self.predictor.endpoint_name, lambda_env_config)
         print(f"Deployment to SageMaker finished successfully. Time taken: {time.time() - t_start:.2f} seconds")
         return function_arn
     
@@ -141,3 +144,13 @@ class PyTorchSageMakerResourceUser(ResourceUser):
         response = self.lambda_user.use(data)
         self.check_output(response)
         return response
+
+    def teardown(self):
+        lambda_environment_variables = self.lambda_user.get_env()
+        self.lambda_user.teardown()
+        sagemaker_endpoint_name = lambda_environment_variables["ENDPOINT_NAME"]
+
+        sagemaker_client = self.boto3_session.client("sagemaker")
+        sagemaker_client.delete_endpoint(EndpointName=sagemaker_endpoint_name)
+
+        print("Your SageMaker endpoint has been deleted.")
