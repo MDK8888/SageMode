@@ -4,3 +4,4 @@ from .SSHConnect import *
 from .TypeChecking import *
 from .UploadToRemote import *
 from .WriteFunctionToFile import *
+from .AddVariable import *

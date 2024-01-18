@@ -15,7 +15,7 @@ class DeploymentStateMachine(ResourceUser):
         self.step_function_client = self.boto3_session.client("stepfunctions", region_name=os.environ["AWS_REGION"])
         self.state_machine_definition = {}
 
-    def deploy(self, state_machine_name: str, comment:str=None, resource_users:list[ResourceUser]=[], deployment_args:list[dict]=[]) -> None:
+    def deploy(self, state_machine_name:str, comment:str = None, resource_users:list[ResourceUser] = [], deployment_args:list[dict] = []) -> None:
 
         def verify_transition(index:int) -> None:
             if index >= len(resource_users)-1:
@@ -95,3 +95,10 @@ class DeploymentStateMachine(ResourceUser):
             return output
         else:
             print("Execution did not succeed. Status:", execution_status)
+    
+    def teardown(self):
+        if not self.state_machine_arn:
+            raise ValueError("You cannot call teardown if you did not call deploy. Call deploy() and try again.")
+        
+        self.step_function_client.delete_state_machine(stateMachineArn=self.state_machine_arn)
+        print(f"Step Function deleted successfully.")

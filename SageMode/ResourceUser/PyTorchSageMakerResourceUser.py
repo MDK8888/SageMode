@@ -29,7 +29,7 @@ class PyTorchSageMakerResourceUser(ResourceUser):
         except:
             raise Exception("Unable to create bucket for session. Double check to make sure that your session is not 'None.'")
 
-    def make_inference_local_directory(self, functions_dict:dict[str, Callable], model_path:str, weight_path:str, requirements_path:str = "requirements.txt", skip=False) -> None:
+    def make_inference_local_directory(self, functions_dict:dict[str, Callable], model_path:str, weight_path:str, requirements_path:str = "requirements.txt", skip:bool = False) -> None:
         local_pytorch_directory_path = os.path.join(os.getcwd(), "PyTorchSageMaker")
         self.model_dir = str(local_pytorch_directory_path)
         
@@ -61,7 +61,7 @@ class PyTorchSageMakerResourceUser(ResourceUser):
         
         print(f"all necessary files copied into directory {local_pytorch_directory_path}/")
 
-    def compress(self, output_file="model.tar.gz", skip=False) -> None:
+    def compress(self, output_file="model.tar.gz", skip:bool = False) -> None:
         self.output_file = str(os.path.join(os.getcwd(), output_file))
         if skip:
             print("You have selected to skip compressing your model. Skipping this step...")
@@ -76,7 +76,7 @@ class PyTorchSageMakerResourceUser(ResourceUser):
             print(f"compression finished successfully. Time taken: {time.time() - t_start:.2f} seconds")
             os.chdir(parent_dir)
 
-    def upload_to_s3(self, skip=False) -> None:
+    def upload_to_s3(self, skip:bool = False) -> None:
         s3_model_dir = os.path.basename(self.model_dir)
         s3_output_file = os.path.basename(self.output_file)
 

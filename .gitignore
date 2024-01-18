@@ -3,7 +3,6 @@ model.tar.gz
 __pycache__
 aws_venv
 todo.txt
-Tests
 test.py
 *.pem
 *_requirements.txt

@@ -58,7 +58,7 @@ class PyTorchEC2ResourceUser(ResourceUser):
         absolute_requirements_path = f"{os.getcwd()}/{requirements_path}"
         copy_file_to_directory(absolute_requirements_path, ec2_inference_path, ec2_requirements_path)
         
-    def create_container_and_get_dns(self, ami_id:str, instance_type:str, container_dns:str=None, skip=False) -> str:
+    def create_container_and_get_dns(self, ami_id:str, instance_type:str, container_dns:str = None, skip:bool = False) -> str:
         if skip:
             if container_dns == None:
                 raise ValueError("If you are selecting to skip creating your container, you must specify the dns of an already existing container.")
@@ -88,7 +88,7 @@ class PyTorchEC2ResourceUser(ResourceUser):
 
         return public_dns
 
-    def upload_directory_to_ec2(self, public_dns:str, skip=True):
+    def upload_directory_to_ec2(self, public_dns:str, skip:bool = True):
         ssh_client = paramiko.SSHClient()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
@@ -118,7 +118,7 @@ class PyTorchEC2ResourceUser(ResourceUser):
 
         print("Directory upload completed.")
 
-    def run_server(self, public_dns:str, port:int=8000):
+    def run_server(self, public_dns:str, port:int = 8000):
         ssh_client = paramiko.SSHClient()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 

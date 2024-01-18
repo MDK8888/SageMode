@@ -44,7 +44,7 @@ class HFSageMakerResourceUser(ResourceUser):
             except:
                 continue
 
-    def copy_from_huggingface(self, model_id:str, skip=False) -> None:
+    def copy_from_huggingface(self, model_id:str, skip:bool = False) -> None:
         
         model_tar_dir = os.path.join(os.getcwd(), model_id.split("/")[-1])
 
@@ -76,7 +76,7 @@ class HFSageMakerResourceUser(ResourceUser):
             except:
                 continue
 
-    def compress(self, output_file="model.tar.gz", skip=False) -> None:
+    def compress(self, output_file="model.tar.gz", skip:bool = False) -> None:
         self.output_file = str(os.path.join(os.getcwd(), output_file))
         if skip:
             print("You have selected to skip compressing your model. Skipping this step...")
@@ -91,7 +91,7 @@ class HFSageMakerResourceUser(ResourceUser):
             print(f"compression finished successfully. Time taken: {time.time() - t_start:.2f} seconds")
             os.chdir(parent_dir)
 
-    def upload_to_s3(self, skip=False) -> None:
+    def upload_to_s3(self, skip:bool = False) -> None:
         s3_model_dir = os.path.basename(self.model_dir)
         s3_output_file = os.path.basename(self.output_file)
         if skip:
