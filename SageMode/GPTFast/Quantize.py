@@ -17,7 +17,7 @@ def quantize_model(model:nn.Module, dtype='float32') -> nn.Module:
 
     # Quantize the model
     quantized_model = quantization.quantize_dynamic(
-        model, qconfig=qconfig, dtype=torch.__dict__[dtype]
+        model, qconfig_spec=qconfig, dtype=torch.__dict__[dtype]
     )
 
     return quantized_model

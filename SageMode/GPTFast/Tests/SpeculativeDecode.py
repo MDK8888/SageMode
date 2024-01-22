@@ -79,9 +79,3 @@ t1 = time.time()
 original_tokens, original_prob = generate_probability_distribution(input_tokens, 20, model, argmax)
 
 print(f"normal inference time: {time.time() - t1:.2f}")
-
-t1 = time.time()
-
-original_tokens, original_prob = generate_probability_distribution(input_tokens, 20, draft_model, argmax)
-
-print(f"normal inference time: {time.time() - t1:.2f}")
