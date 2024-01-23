@@ -2,8 +2,11 @@ import torch
 from transformers import AutoModelForCausalLM
 from ..GPTFast import gpt_fast
 
-model_name = "gpt2"
+model_name = "gpt2-xl"
 model = AutoModelForCausalLM.from_pretrained(model_name)
+
+draft_model_name = "gpt2"
+draft_model = AutoModelForCausalLM.from_pretrained(draft_model_name)
 
 def generate_probability_distribution(self, input_ids, length, return_text:bool = True):
     # Encode the initial token
@@ -40,5 +43,4 @@ def argmax(self, probabilities):
     max_prob_index = torch.argmax(probabilities, dim=-1)
     return max_prob_index
 
-#model = gpt_fast(model, draft_model=draft_model, draft_model_decode_function=generate_probability_distribution, sample_function=argmax)
-model = gpt_fast(model)
+model = gpt_fast(model, draft_model=draft_model, draft_model_decode_function=generate_probability_distribution, sample_function=argmax)
