@@ -114,7 +114,7 @@ def load_from_int8(model:nn.Module) -> nn.Module:
     config = model.config
     model_id = config.name_or_path
 
-    quantize_path = f"{os.getcwd()}/{model_id}int8.pth"
+    quantize_path = f"{model_id}int8.pth"
     state_dict = torch.load(quantize_path)
     config = AutoConfig.from_pretrained(model_id)
 
