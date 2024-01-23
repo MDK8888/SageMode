@@ -23,24 +23,6 @@ class WeightOnlyInt8Linear(torch.nn.Module):
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         return F.linear(input, self.weight.to(dtype=input.dtype)) * self.scales
 
-class WeightOnlyInt8Linear(torch.nn.Module):
-    __constants__ = ['in_features', 'out_features']
-    in_features: int
-    out_features: int
-    weight: torch.Tensor
-
-    def __init__(self, in_features: int, out_features: int, bias: bool = True,
-                 device=None, dtype=None) -> None:
-        factory_kwargs = {'device': device, 'dtype': dtype}
-        super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.register_buffer("weight", torch.empty((out_features, in_features), dtype=torch.int8))
-        self.register_buffer("scales", torch.ones(out_features, dtype=torch.bfloat16))
-
-    def forward(self, input: torch.Tensor) -> torch.Tensor:
-        return F.linear(input, self.weight.to(dtype=input.dtype)) * self.scales
-
 def replace_linear_weight_only_int8_per_channel(module):
     for name, child in module.named_children():
         if isinstance(child, nn.Linear):
@@ -54,6 +36,7 @@ class WeightOnlyInt8QuantHandler:
 
     @torch.no_grad()
     def create_quantized_state_dict(self):
+        
         cur_state_dict = self.mod.state_dict()
         for fqn, mod in self.mod.named_modules():
             if isinstance(mod, torch.nn.Linear):
@@ -116,14 +99,14 @@ def load_from_int8(model:nn.Module) -> nn.Module:
     model_id = config.name_or_path
 
     if platform.system() == "Windows":
-        quantize_path = f"{os.getcwd()}\\{model_id}int8.pth"
+        quantize_path = f"{model_id}int8.pth"
     elif platform.system() == "Linux":
-        quantize_path = f"{os.getcwd()}/{model_id}int8.pth"
-        
-    config = AutoConfig.from_pretrained(model_id)
+        quantize_path = f"{model_id}int8.pth"
 
     # Instantiate the model with the loaded state dictionary and configuration
-    model = AutoModel.from_pretrained(pretrained_model_name_or_path=quantize_path, config=config)
     quant_handler = WeightOnlyInt8QuantHandler(model)
     model = quant_handler.convert_for_runtime()
+    
+    checkpoint = torch.load(quantize_path, mmap=True, weights_only=True)
+    model.load_state_dict(checkpoint)
     return model
