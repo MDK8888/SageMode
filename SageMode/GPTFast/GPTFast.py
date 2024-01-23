@@ -1,12 +1,13 @@
+import os
 from torch import nn
-from Compile import torch_compile_model
-from KVCache import modify_transformer_attention_blocks
-from Quantize import quantize_model
-from SpeculativeDecode import speculative_decode
+from .Compile import torch_compile_model
+from .Quantize import *
+from .SpeculativeDecode import speculative_decode
 
-def gpt_fast(model:nn.Module, **transformer_kwargs):
+def gpt_fast(model:nn.Module):
+    int8_path = f"{os.getcwd()}/{model.config.name_or_path}int8.pth"
+    if not os.path.exists(int8_path):
+        int8_quantize(model)
+    model = load_from_int8(model)
     model = torch_compile_model(model)
-    model = modify_transformer_attention_blocks(model, **transformer_kwargs)
-    model = quantize_model(model)
-    model.speculative_decode = speculative_decode
     return model

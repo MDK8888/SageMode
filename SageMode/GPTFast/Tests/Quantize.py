@@ -1,23 +1,12 @@
-import time
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from ..Quantize import quantize_model
+from transformers import AutoModelForCausalLM
+from ..Quantize import *
 
-model_name = "gpt2-xl"
+model_name = "gpt2"
 
 model = AutoModelForCausalLM.from_pretrained(model_name)
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model.eval().cuda()
+#tokenizer = AutoTokenizer.from_pretrained(model_name)
+#model.cuda()
 
-input = "Hello, how are you today?"
-input_tokens = tokenizer.encode(input, return_tensors="pt")
+model = load_from_int8(model)
 
-t0 = time.time()
-output = model(input_tokens)
-print(f"time taken: {time.time() - t0:.2f}")
-
-model = quantize_model(model, "int8")
-
-t0 = time.time()
-output = model(input_tokens)
-print(f"time taken: {time.time() - t0:.2f}")
+model.cuda()

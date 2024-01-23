@@ -22,9 +22,6 @@ model = AutoModelForCausalLM.from_pretrained(model_name)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model.cuda()
 
-compiled_model = torch_compile_model(model)
-compiled_model.cuda()
-
 input = "Tell me a story"
 input_tokens = tokenizer.encode(input, return_tensors="pt").cuda()
 
@@ -38,6 +35,9 @@ for i in range(N_ITERS):
     print(f"eager eval time {i}: {eager_time}")
 
 print("~" * 10)
+
+compiled_model = torch_compile_model(model)
+compiled_model.cuda()
 
 compile_times = []
 for i in range(N_ITERS):
