@@ -1,5 +1,3 @@
-import time
-import types
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 from ..SpeculativeDecode import add_speculative_decoding
@@ -49,6 +47,16 @@ draft_model = AutoModelForCausalLM.from_pretrained(draft_model_name)
 draft_tokenizer = AutoTokenizer.from_pretrained(draft_model_name)
 
 add_speculative_decoding(model, draft_model, generate_probability_distribution, argmax)
+
+assert hasattr(draft_model, "generate_probability_distribution")
+
+initial_string = "Hello, how are you?"
+input_tokens = tokenizer.encode(initial_string, return_tensors="pt")
+
+result = model.generate(cur_tokens=input_tokens, max_tokens=50, speculate_k=5, decode_function_str="generate_probability_distribution", sampling_function_str="argmax", return_text=True)
+
+generated_text = tokenizer.decode(result[0], skip_special_tokens=True)
+print(generated_text)
 
 
 

@@ -20,7 +20,7 @@ def speculative_decode(
 ) -> torch.Tensor:
     device = cur_tokens.device
 
-    draft_model_sampling_kwargs = kwargs["draft_model_decoding_kwargs"]
+    draft_model_sampling_kwargs = kwargs.get("draft_model_decoding_kwargs", {})
 
     if kv_cache:
         decode_input = torch.Tensor([cur_tokens[-1]]) #the KV cache if implemented correctly only needs the most recent token.
@@ -33,7 +33,7 @@ def speculative_decode(
     draft_model_decode_function = getattr(draft_model, decode_function_str)
     sampling_function = getattr(self, sampling_function_str)
     
-    draft_tokens, draft_prob = draft_model_decode_function(decode_input, speculate_k, **draft_model_sampling_kwargs)
+    draft_tokens, draft_prob = draft_model_decode_function(draft_model, input_ids=decode_input, length=speculate_k, **draft_model_sampling_kwargs)
 
     assert len(draft_tokens.shape) == 1 and len(draft_prob.shape) == 2, "Your draft tokens must have shape (seq_len) and draft_prob must have shape (seq_len, vocab_size)."
 
@@ -67,7 +67,7 @@ def speculative_decode(
             assert hasattr(draft_model, "rollback_cache"), "Error: In order for speculative decoding to work with a kv cache, you must be able to update it."
             draft_model.rollback_cache(n + len(cur_tokens) + 1)
         
-        return torch.cat([draft_tokens[:n+1], last_token])
+        return torch.cat([draft_tokens[:n+1], last_token]).long()
     else: #we accept all tokens from the draft model
         last_token = sampling_function(model_prob[-1])
         if kv_cache:
@@ -77,17 +77,17 @@ def speculative_decode(
             draft_model.rollback_cache(n + len(cur_tokens) + 1)
 
         #assume that draft_model already has a kv cache attached.
-        return torch.cat([draft_tokens, last_token])
+        return torch.cat([draft_tokens, last_token]).long()
 
 def generate(self, cur_tokens:torch.Tensor, max_tokens:int, speculate_k:int, decode_function_str:str, sampling_function_str:str, **kwargs) -> torch.Tensor:
 
     assert len(cur_tokens.shape) == 2 and cur_tokens.shape[0] == 1, "Your batch size must be 1"
 
-    assert hasattr(self, "speculative_decode"), "You must attach speculative decoding as a method of the LLM"
+    assert hasattr(self, "speculative_decode"), "You must attach speculative decoding as a method of the model"
 
     while len(cur_tokens[0]) < max_tokens:
         new_tokens = self.speculative_decode(cur_tokens, speculate_k, decode_function_str, sampling_function_str, **kwargs)
-        cur_tokens[0] = torch.cat((cur_tokens[0], new_tokens), dim=0)
+        cur_tokens = torch.cat((cur_tokens, new_tokens.unsqueeze(0)), dim=1).to(torch.long)
 
     return cur_tokens
 
