@@ -13,8 +13,6 @@ def speculative_decode(
     self,
     cur_tokens:torch.Tensor,
     speculate_k:int,
-    decode_function_str:Callable,
-    sampling_function_str:Callable,
     kv_cache:bool = False,
     **kwargs
 ) -> torch.Tensor:
@@ -29,11 +27,8 @@ def speculative_decode(
 
     assert hasattr(self, "draft_model"), "You did not prepare your model properly for speculative decoding. Make sure that you add a draft model."
     draft_model = self.draft_model
-
-    draft_model_decode_function = getattr(draft_model, decode_function_str)
-    sampling_function = getattr(self, sampling_function_str)
     
-    draft_tokens, draft_prob = draft_model_decode_function(draft_model, input_ids=decode_input, length=speculate_k, **draft_model_sampling_kwargs)
+    draft_tokens, draft_prob = draft_model.decode_function(input_ids=decode_input, length=speculate_k, **draft_model_sampling_kwargs)
 
     assert len(draft_tokens.shape) == 1 and len(draft_prob.shape) == 2, "Your draft tokens must have shape (seq_len) and draft_prob must have shape (seq_len, vocab_size)."
 
@@ -60,7 +55,7 @@ def speculative_decode(
         q = model_prob[n]
         new = q - p
         new = torch.where(new > 0, new, 0.0)
-        last_token = torch.Tensor([sampling_function(new)])
+        last_token = torch.Tensor([self.sample(new)])
         if kv_cache:
             assert hasattr(self, "rollback_cache"), "Error: In order for speculative decoding to work with a kv cache, you must be able to update it."
             self.rollback_cache(n + len(cur_tokens) + 1)
@@ -69,7 +64,7 @@ def speculative_decode(
         
         return torch.cat([draft_tokens[:n+1], last_token]).long()
     else: #we accept all tokens from the draft model
-        last_token = sampling_function(model_prob[-1])
+        last_token = self.sample(model_prob[-1])
         if kv_cache:
             assert hasattr(self, "rollback_cache"), "Error: In order for speculative decoding to work with a kv cache, you must be able to update it."
             self.rollback_cache(n + len(cur_tokens) + 2)
@@ -79,25 +74,23 @@ def speculative_decode(
         #assume that draft_model already has a kv cache attached.
         return torch.cat([draft_tokens, last_token]).long()
 
-def generate(self, cur_tokens:torch.Tensor, max_tokens:int, speculate_k:int, decode_function_str:str, sampling_function_str:str, **kwargs) -> torch.Tensor:
+def generate(self, cur_tokens:torch.Tensor, max_tokens:int, speculate_k:int, **kwargs) -> torch.Tensor:
 
     assert len(cur_tokens.shape) == 2 and cur_tokens.shape[0] == 1, "Your batch size must be 1"
 
     assert hasattr(self, "speculative_decode"), "You must attach speculative decoding as a method of the model"
 
     while len(cur_tokens[0]) < max_tokens:
-        new_tokens = self.speculative_decode(cur_tokens, speculate_k, decode_function_str, sampling_function_str, **kwargs)
+        new_tokens = self.speculative_decode(cur_tokens, speculate_k, **kwargs)
         cur_tokens = torch.cat((cur_tokens, new_tokens.unsqueeze(0)), dim=1).to(torch.long)
 
     return cur_tokens
 
 def add_speculative_decoding(model:nn.Module, draft_model:nn.Module, draft_model_decode_function:Callable, sample_function:Callable) -> nn.Module:
-    draft_model_decode_function_name = draft_model_decode_function.__name__
-    setattr(draft_model, draft_model_decode_function_name, draft_model_decode_function)
+    draft_model.decode_function = types.MethodType(draft_model_decode_function, draft_model)
     model.draft_model = draft_model
 
-    sample_function_name = sample_function.__name__
-    setattr(model, sample_function_name, sample_function)
+    model.sample = types.MethodType(sample_function, model)
 
     model.speculative_decode = types.MethodType(speculative_decode, model)    
     model.generate = types.MethodType(generate, model)

@@ -16,7 +16,8 @@ def generate_probability_distribution(self, input_ids, length, return_text:bool 
             token_probabilities = torch.nn.functional.softmax(logits, dim=-1)
 
         # Use the callback function for token sampling, passing any additional kwargs
-        next_token_id = argmax(token_probabilities, **kwargs)
+        max_prob_index = torch.argmax(token_probabilities, dim=-1)
+        next_token_id = max_prob_index
 
         # Append the sampled token to the input sequence
         input_ids = torch.cat([input_ids, next_token_id.unsqueeze(1)], dim=-1)
@@ -32,7 +33,7 @@ def generate_probability_distribution(self, input_ids, length, return_text:bool 
     else:
         return all_probabilities_tensor.squeeze(1)
     
-def generate_probability_distribution_static(model, input_ids, length, return_text:bool = True, **kwargs):
+def generate_probability_distribution_static(model, input_ids, length, return_text:bool = True):
     # Encode the initial token
 
     all_probabilities = []
@@ -45,7 +46,8 @@ def generate_probability_distribution_static(model, input_ids, length, return_te
             token_probabilities = torch.nn.functional.softmax(logits, dim=-1)
 
         # Use the callback function for token sampling, passing any additional kwargs
-        next_token_id = argmax(token_probabilities, **kwargs)
+        max_prob_index = torch.argmax(token_probabilities, dim=-1)
+        next_token_id = max_prob_index
 
         # Append the sampled token to the input sequence
         input_ids = torch.cat([input_ids, next_token_id.unsqueeze(1)], dim=-1)
@@ -61,10 +63,12 @@ def generate_probability_distribution_static(model, input_ids, length, return_te
     else:
         return all_probabilities_tensor.squeeze(1)
 
-def argmax(probabilities):
+def argmax(self, probabilities):
     # Use argmax to get the token with the maximum probability
     max_prob_index = torch.argmax(probabilities, dim=-1)
     return max_prob_index
+
+
 
 # Example usage
 model_name = "gpt2-xl"
@@ -86,7 +90,7 @@ print(f"time taken: {time.time() - t0:.2f}")
 add_speculative_decoding(model, draft_model, generate_probability_distribution, argmax)
 
 t0 = time.time()
-result = model.generate(cur_tokens=input_tokens, max_tokens=50, speculate_k=5, decode_function_str="generate_probability_distribution", sampling_function_str="argmax", return_text=True)
+result = model.generate(cur_tokens=input_tokens, max_tokens=50, speculate_k=5, return_text=True)
 print(f"time taken: {time.time() - t0:.2f}")
 
 
