@@ -97,11 +97,8 @@ def int8_quantize(model:nn.Module) -> nn.Module:
 def load_from_int8(model:nn.Module) -> nn.Module:
     config = model.config
     model_id = config.name_or_path
-
-    if platform.system() == "Windows":
-        quantize_path = f"{model_id}int8.pth"
-    elif platform.system() == "Linux":
-        quantize_path = f"{model_id}int8.pth"
+    
+    quantize_path = f"{model_id}int8.pth"
 
     # Instantiate the model with the loaded state dictionary and configuration
     quant_handler = WeightOnlyInt8QuantHandler(model)
