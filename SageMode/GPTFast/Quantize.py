@@ -1,4 +1,5 @@
 import os
+import platform
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -114,13 +115,15 @@ def load_from_int8(model:nn.Module) -> nn.Module:
     config = model.config
     model_id = config.name_or_path
 
-    quantize_path = f"{os.getcwd()}/{model_id}int8.pth"
-    state_dict = torch.load(quantize_path)
+    if platform.system() == "Windows":
+        quantize_path = f"{os.getcwd()}\\{model_id}int8.pth"
+    elif platform.system() == "Linux":
+        quantize_path = f"{os.getcwd()}/{model_id}int8.pth"
+        
     config = AutoConfig.from_pretrained(model_id)
 
     # Instantiate the model with the loaded state dictionary and configuration
-    model = AutoModel.from_pretrained(quantize_path, config=config)
-
+    model = AutoModel.from_pretrained(pretrained_model_name_or_path=quantize_path, config=config)
     quant_handler = WeightOnlyInt8QuantHandler(model)
     model = quant_handler.convert_for_runtime()
     return model

@@ -3,7 +3,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 from ..SpeculativeDecode import add_speculative_decoding
 
-def generate_probability_distribution(self, input_ids, length, return_text:bool = True, **kwargs):
+def generate_probability_distribution(self, input_ids, length, return_text:bool = True):
     # Encode the initial token
 
     all_probabilities = []
@@ -68,8 +68,6 @@ def argmax(self, probabilities):
     max_prob_index = torch.argmax(probabilities, dim=-1)
     return max_prob_index
 
-
-
 # Example usage
 model_name = "gpt2-xl"
 draft_model_name = "gpt2"
@@ -92,7 +90,3 @@ add_speculative_decoding(model, draft_model, generate_probability_distribution, 
 t0 = time.time()
 result = model.generate(cur_tokens=input_tokens, max_tokens=50, speculate_k=5, return_text=True)
 print(f"time taken: {time.time() - t0:.2f}")
-
-
-
-
