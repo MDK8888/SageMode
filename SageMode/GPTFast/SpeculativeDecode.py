@@ -55,7 +55,7 @@ def speculative_decode(
         q = model_prob[n]
         new = q - p
         new = torch.where(new > 0, new, 0.0)
-        last_token = torch.Tensor([self.sample(new)])
+        last_token = torch.Tensor([self.sample(new)]).cuda()
         if kv_cache:
             assert hasattr(self, "rollback_cache"), "Error: In order for speculative decoding to work with a kv cache, you must be able to update it."
             self.rollback_cache(n + len(cur_tokens) + 1)
@@ -64,7 +64,7 @@ def speculative_decode(
         
         return torch.cat([draft_tokens[:n+1], last_token]).long()
     else: #we accept all tokens from the draft model
-        last_token = self.sample(model_prob[-1])
+        last_token = self.sample(model_prob[-1]).cuda()
         if kv_cache:
             assert hasattr(self, "rollback_cache"), "Error: In order for speculative decoding to work with a kv cache, you must be able to update it."
             self.rollback_cache(n + len(cur_tokens) + 2)
@@ -76,13 +76,15 @@ def speculative_decode(
 
 def generate(self, cur_tokens:torch.Tensor, max_tokens:int, speculate_k:int, **kwargs) -> torch.Tensor:
 
+    cur_tokens = cur_tokens.cuda()
+
     assert len(cur_tokens.shape) == 2 and cur_tokens.shape[0] == 1, "Your batch size must be 1"
 
     assert hasattr(self, "speculative_decode"), "You must attach speculative decoding as a method of the model"
 
     while len(cur_tokens[0]) < max_tokens:
-        new_tokens = self.speculative_decode(cur_tokens, speculate_k, **kwargs)
-        cur_tokens = torch.cat((cur_tokens, new_tokens.unsqueeze(0)), dim=1).to(torch.long)
+        new_tokens = self.speculative_decode(cur_tokens, speculate_k, False, **kwargs)
+        cur_tokens = torch.cat((cur_tokens, new_tokens.unsqueeze(0).cuda()), dim=1).to(torch.long)
 
     return cur_tokens
 

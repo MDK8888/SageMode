@@ -3,7 +3,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 from ..SpeculativeDecode import add_speculative_decoding
 
-def generate_probability_distribution(self, input_ids, length, return_text:bool = True):
+def generate_probability_distribution_static(model, input_ids, length, return_text:bool = True):
     # Encode the initial token
 
     all_probabilities = []
@@ -11,7 +11,7 @@ def generate_probability_distribution(self, input_ids, length, return_text:bool 
     for _ in range(length):
         # Extract the logits from the output
         with torch.no_grad():
-            logits = self.forward(input_ids).logits[:, -1, :]
+            logits = model(input_ids).logits[:, -1, :]
             # Get the tokens and their probabilities as a tensor
             token_probabilities = torch.nn.functional.softmax(logits, dim=-1)
 
@@ -32,8 +32,8 @@ def generate_probability_distribution(self, input_ids, length, return_text:bool 
         return input_ids.squeeze(0)[-length:], all_probabilities_tensor.squeeze(1)
     else:
         return all_probabilities_tensor.squeeze(1)
-    
-def generate_probability_distribution_static(model, input_ids, length, return_text:bool = True):
+
+def generate_probability_distribution(self, input_ids, length, return_text:bool = True):
     # Encode the initial token
 
     all_probabilities = []
@@ -41,7 +41,7 @@ def generate_probability_distribution_static(model, input_ids, length, return_te
     for _ in range(length):
         # Extract the logits from the output
         with torch.no_grad():
-            logits = model(input_ids).logits[:, -1, :]
+            logits = self.forward(input_ids).logits[:, -1, :]
             # Get the tokens and their probabilities as a tensor
             token_probabilities = torch.nn.functional.softmax(logits, dim=-1)
 
