@@ -6,6 +6,8 @@ from ..GPTFast import gpt_fast
 torch._dynamo.reset()
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
 def timed(fn):
     start = torch.cuda.Event(enable_timing=True)
     end = torch.cuda.Event(enable_timing=True)
@@ -87,27 +89,14 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 draft_model_name = "gpt2"
 draft_model = AutoModelForCausalLM.from_pretrained(draft_model_name)
 
-model.cuda()
-
 initial_string = "Hello, how are you?"
-input_tokens = tokenizer.encode(initial_string, return_tensors="pt").cuda()
+input_tokens = tokenizer.encode(initial_string, return_tensors="pt").to(device)
 
-N_ITERS=10
+N_ITERS=15
 MAX_TOKENS=50
 
-'''
-eager_times = []
-for i in range(5):
-    with torch.no_grad():
-        _, eager_time = timed(lambda: generate_probability_distribution_static(model, input_tokens, MAX_TOKENS))
-    eager_times.append(eager_time)
-    print(f"eager eval time {i}: {eager_time}")
-
-print("~" * 10)
-'''
-
 gpt_fast_model = gpt_fast(model, draft_model=draft_model, draft_model_decode_function=generate_probability_distribution, sample_function=argmax)
-gpt_fast_model.cuda()
+gpt_fast_model.to(device)
 
 compile_times = []
 for i in range(N_ITERS):

@@ -95,6 +95,9 @@ def int8_quantize(model:nn.Module) -> nn.Module:
     torch.save(quantized_state_dict, quantize_path)
 
 def load_from_int8(model:nn.Module) -> nn.Module:
+    
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    
     config = model.config
     model_id = config.name_or_path
     
@@ -104,6 +107,6 @@ def load_from_int8(model:nn.Module) -> nn.Module:
     quant_handler = WeightOnlyInt8QuantHandler(model)
     model = quant_handler.convert_for_runtime()
     
-    checkpoint = torch.load(quantize_path, mmap=True, weights_only=True)
+    checkpoint = torch.load(quantize_path, mmap=True, weights_only=True, map_location=torch.device(device))
     model.load_state_dict(checkpoint)
     return model
