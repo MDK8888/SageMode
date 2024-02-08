@@ -73,7 +73,7 @@ def generate_probability_distribution(self, input_ids, length, return_text:bool 
     all_probabilities_tensor = torch.cat(all_probabilities, dim=0)
 
     if return_text:
-        return input_ids.squeeze(0)[-length:], all_probabilities_tensor.squeeze(1)
+        return input_ids[:, -length:], all_probabilities_tensor.squeeze(1)
     else:
         return all_probabilities_tensor.squeeze(1)
 
@@ -92,16 +92,29 @@ draft_model = AutoModelForCausalLM.from_pretrained(draft_model_name)
 initial_string = "Hello, how are you?"
 input_tokens = tokenizer.encode(initial_string, return_tensors="pt").to(device)
 
-N_ITERS=15
+N_ITERS=10
 MAX_TOKENS=50
 
-gpt_fast_model = gpt_fast(model, draft_model=draft_model, draft_model_decode_function=generate_probability_distribution, sample_function=argmax)
-gpt_fast_model.to(device)
+'''
+model.to(device)
 
 compile_times = []
 for i in range(N_ITERS):
     with torch.no_grad():
-        _, compile_time = timed(lambda: gpt_fast_model.generate(cur_tokens=input_tokens, max_tokens=MAX_TOKENS, speculate_k=5, draft_model_decoding_kwargs={"return_text":True}))
+        _, compile_time = timed(lambda: generate_probability_distribution_static(model, input_tokens, MAX_TOKENS, True))
     compile_times.append(compile_time)
-    print(f"compile eval time {i}: {compile_time}")
+    print(f"eager eval time {i}: {compile_time}")
+
+model.to("cpu")
+'''
+
+gpt_fast_model = gpt_fast(model, draft_model=draft_model, draft_model_decode_function=generate_probability_distribution, sample_function=argmax)
+gpt_fast_model.to(device)
+
+fast_compile_times = []
+for i in range(N_ITERS):
+    with torch.no_grad():
+        _, compile_time = timed(lambda: gpt_fast_model.generate(cur_tokens=input_tokens, max_tokens=MAX_TOKENS, speculate_k=5, draft_model_decoding_kwargs={"return_text":True}))
+    fast_compile_times.append(compile_time)
+    print(f"gpt fast eval time {i}: {compile_time}")
 print("~" * 10)

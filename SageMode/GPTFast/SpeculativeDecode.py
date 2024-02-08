@@ -30,27 +30,28 @@ def speculative_decode(
     
     draft_tokens, draft_prob = draft_model.decode_function(input_ids=decode_input, length=speculate_k, **draft_model_sampling_kwargs)
 
-    assert len(draft_tokens.shape) == 1 and len(draft_prob.shape) == 2, "Your draft tokens must have shape (seq_len) and draft_prob must have shape (seq_len, vocab_size)."
+    assert len(draft_tokens.shape) == 2 and len(draft_prob.shape) == 2, "Your draft tokens must have shape (1, seq_len) and draft_prob must have shape (seq_len, vocab_size)."
 
-    if type(draft_tokens) == list:
-        draft_tokens = torch.cat(draft_tokens)
-    
     model_sampling_kwargs = kwargs.get("model_forward_kwargs", {})
-    model_logits = self.forward(draft_tokens, **model_sampling_kwargs).logits.squeeze(0)
+    full_tokens = torch.cat([decode_input, draft_tokens], dim=-1)
+    with torch.no_grad():
+        model_logits = self.forward(full_tokens, **model_sampling_kwargs).logits
+    model_logits = model_logits.squeeze(0)[-draft_tokens.shape[1]:, :]
     model_prob = torch.nn.functional.softmax(model_logits, dim=-1)
     
     assert len(model_prob.shape) == 2, "Your model_prob must have shape (seq_len, vocab_size)."
 
-    assert len(model_prob) == len(draft_prob), "In order for speculative decoding to work, the main model must the same number of tokens as the draft model."
+    assert len(model_prob) == len(draft_prob), "In order for speculative decoding to work, the main model must generate the same number of tokens as the draft model."
 
     p = model_prob[torch.arange(0, speculate_k, device=device), draft_tokens]
     q = draft_prob[torch.arange(0, speculate_k, device=device), draft_tokens]
 
     ratio = p / q
     rand = torch.rand_like(ratio)
-    n = torch.argmax((rand > ratio).to(dtype=torch.float32)).item()
 
-    if n < len(ratio) and rand[n] > ratio[n]:
+    n = (rand > ratio).nonzero(as_tuple=True)[0][0].item()
+
+    if n < len(ratio) and rand[0][n] > ratio[0][n]:
         p = draft_prob[n]
         q = model_prob[n]
         new = q - p
@@ -62,7 +63,7 @@ def speculative_decode(
             assert hasattr(draft_model, "rollback_cache"), "Error: In order for speculative decoding to work with a kv cache, you must be able to update it."
             draft_model.rollback_cache(n + len(cur_tokens) + 1)
         
-        return torch.cat([draft_tokens[:n+1], last_token]).long()
+        return torch.cat([draft_tokens[:n+1], last_token.unsqueeze(0)], dim=-1).long()
     else: #we accept all tokens from the draft model
         last_token = torch.Tensor([self.sample(model_prob[-1])]).to(device)
         if kv_cache:
@@ -72,7 +73,7 @@ def speculative_decode(
             draft_model.rollback_cache(n + len(cur_tokens) + 1)
 
         #assume that draft_model already has a kv cache attached.
-        return torch.cat([draft_tokens, last_token]).long()
+        return torch.cat([draft_tokens, last_token.unsqueeze(0)], dim=-1).long()
 
 def generate(self, cur_tokens:torch.Tensor, max_tokens:int, speculate_k:int, **kwargs) -> torch.Tensor:
 
@@ -82,7 +83,7 @@ def generate(self, cur_tokens:torch.Tensor, max_tokens:int, speculate_k:int, **k
 
     while len(cur_tokens[0]) < max_tokens:
         new_tokens = self.speculative_decode(cur_tokens, speculate_k, False, **kwargs)
-        cur_tokens = torch.cat((cur_tokens, new_tokens.unsqueeze(0)), dim=1).to(torch.long)
+        cur_tokens = torch.cat((cur_tokens, new_tokens), dim=1).to(torch.long)
 
     return cur_tokens
 

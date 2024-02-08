@@ -29,14 +29,14 @@ def generate_probability_distribution_static(model, input_ids, length, return_te
     all_probabilities_tensor = torch.cat(all_probabilities, dim=0)
 
     if return_text:
-        return input_ids.squeeze(0)[-length:], all_probabilities_tensor.squeeze(1)
+        return input_ids[:, -length:], all_probabilities_tensor.squeeze(1)
     else:
         return all_probabilities_tensor.squeeze(1)
 
-def generate_probability_distribution(self, input_ids, length, return_text:bool = True):
+def generate_probability_distribution(self, input_ids, length, return_text: bool = True):
     # Encode the initial token
 
-    all_probabilities = []
+    all_probabilities = torch.empty(0)  # Initialize as an empty tensor
 
     for _ in range(length):
         # Extract the logits from the output
@@ -52,16 +52,13 @@ def generate_probability_distribution(self, input_ids, length, return_text:bool 
         # Append the sampled token to the input sequence
         input_ids = torch.cat([input_ids, next_token_id.unsqueeze(1)], dim=-1)
 
-        # Append the probabilities to the list
-        all_probabilities.append(token_probabilities.unsqueeze(0))
-
-    # Stack the probabilities to create a tensor of size (length, vocab_size)
-    all_probabilities_tensor = torch.cat(all_probabilities, dim=0)
+        # Concatenate the probabilities directly into the tensor
+        all_probabilities = torch.cat([all_probabilities, token_probabilities.unsqueeze(0)], dim=0)
 
     if return_text:
-        return input_ids.squeeze(0)[-length:], all_probabilities_tensor.squeeze(1)
+        return input_ids[:, -length:], all_probabilities.squeeze(1)
     else:
-        return all_probabilities_tensor.squeeze(1)
+        return all_probabilities.squeeze(1)
 
 def argmax(self, probabilities):
     # Use argmax to get the token with the maximum probability
@@ -81,9 +78,11 @@ draft_tokenizer = AutoTokenizer.from_pretrained(draft_model_name)
 initial_string = "Hello, how are you?"
 input_tokens = tokenizer.encode(initial_string, return_tensors="pt")
 
+'''
 t0 = time.time()
 text = generate_probability_distribution_static(model, input_tokens, 50, True)
 print(f"time taken: {time.time() - t0:.2f}")
+'''
 
 add_speculative_decoding(model, draft_model, generate_probability_distribution, argmax)
 
