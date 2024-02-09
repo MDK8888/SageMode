@@ -5,6 +5,7 @@ aws_venv
 todo.txt
 test.py
 *.pem
+*.pth
 *_requirements.txt
 fish.jpg
 model.py

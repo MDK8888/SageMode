@@ -36,29 +36,15 @@ def generate_probability_distribution_static(model, input_ids, length, return_te
 def generate_probability_distribution(self, input_ids, length, return_text: bool = True):
     # Encode the initial token
 
-    all_probabilities = torch.empty(0)  # Initialize as an empty tensor
-
-    for _ in range(length):
-        # Extract the logits from the output
-        with torch.no_grad():
-            logits = self.forward(input_ids).logits[:, -1, :]
-            # Get the tokens and their probabilities as a tensor
-            token_probabilities = torch.nn.functional.softmax(logits, dim=-1)
-
-        # Use the callback function for token sampling, passing any additional kwargs
-        max_prob_index = torch.argmax(token_probabilities, dim=-1)
-        next_token_id = max_prob_index
-
-        # Append the sampled token to the input sequence
-        input_ids = torch.cat([input_ids, next_token_id.unsqueeze(1)], dim=-1)
-
-        # Concatenate the probabilities directly into the tensor
-        all_probabilities = torch.cat([all_probabilities, token_probabilities.unsqueeze(0)], dim=0)
-
+    total_length = length + input_ids.shape[1]
+    raw_output = self.generate(input_ids, output_scores=True, max_length=total_length, return_dict_in_generate=True)
+    logits = torch.cat(raw_output["scores"])
+    probabilities = torch.nn.functional.softmax(logits, dim=-1)
     if return_text:
-        return input_ids[:, -length:], all_probabilities.squeeze(1)
+        output_ids = raw_output["sequences"]
+        return output_ids[:, -length:], probabilities
     else:
-        return all_probabilities.squeeze(1)
+        return probabilities
 
 def argmax(self, probabilities):
     # Use argmax to get the token with the maximum probability
