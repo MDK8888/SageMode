@@ -16,6 +16,7 @@ def speculative_decode(
     kv_cache:bool = False,
     **kwargs
 ) -> torch.Tensor:
+
     device = cur_tokens.device
 
     draft_model_sampling_kwargs = kwargs.get("draft_model_decoding_kwargs", {})
@@ -33,7 +34,7 @@ def speculative_decode(
     assert len(draft_tokens.shape) == 2 and len(draft_prob.shape) == 2, "Your draft tokens must have shape (1, seq_len) and draft_prob must have shape (seq_len, vocab_size)."
 
     model_sampling_kwargs = kwargs.get("model_forward_kwargs", {})
-    full_tokens = torch.cat([decode_input, draft_tokens], dim=-1)
+    full_tokens = torch.cat([decode_input, draft_tokens], dim=-1).to(device)
     with torch.no_grad():
         model_logits = self.forward(full_tokens, **model_sampling_kwargs).logits
     model_logits = model_logits.squeeze(0)[-draft_tokens.shape[1]:, :]

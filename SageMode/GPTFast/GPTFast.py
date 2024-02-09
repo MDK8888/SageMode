@@ -5,6 +5,7 @@ from .Quantize import *
 from .SpeculativeDecode import add_speculative_decoding
 
 def gpt_fast(model:nn.Module, **spec_dec_kwargs):
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     int8_path = f"{os.getcwd()}/{model.config.name_or_path}int8.pth"
     if not os.path.exists(int8_path):
         int8_quantize(model)
