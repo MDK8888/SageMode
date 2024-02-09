@@ -36,8 +36,11 @@ def generate_probability_distribution_static(model, input_ids, length, return_te
 def generate_probability_distribution(self, input_ids, length, return_text: bool = True):
     # Encode the initial token
 
+    attention_mask = torch.ones(input_ids.shape, dtype=torch.long)
+    pad_token_id = 50256
+
     total_length = length + input_ids.shape[1]
-    raw_output = self.generate(input_ids, output_scores=True, max_length=total_length, return_dict_in_generate=True)
+    raw_output = self.generate(input_ids, output_scores=True, attention_mask=attention_mask, max_length=total_length, return_dict_in_generate=True, pad_token_id=pad_token_id)
     logits = torch.cat(raw_output["scores"])
     probabilities = torch.nn.functional.softmax(logits, dim=-1)
     if return_text:
@@ -64,14 +67,14 @@ draft_tokenizer = AutoTokenizer.from_pretrained(draft_model_name)
 initial_string = "Hello, how are you?"
 input_tokens = tokenizer.encode(initial_string, return_tensors="pt")
 
-'''
 t0 = time.time()
-text = generate_probability_distribution_static(model, input_tokens, 50, True)
-print(f"time taken: {time.time() - t0:.2f}")
-'''
+attention_mask = torch.ones(input_tokens.shape, dtype=torch.long)
+pad_token_id = 50256
+raw_output = model.generate(input_tokens, attention_mask=attention_mask, max_length=56, pad_token_id=pad_token_id)
+print(f"eager time: {time.time() - t0:.2f}")
 
 add_speculative_decoding(model, draft_model, generate_probability_distribution, argmax)
 
 t0 = time.time()
 result = model.generate(cur_tokens=input_tokens, max_tokens=50, speculate_k=5, return_text=True)
-print(f"time taken: {time.time() - t0:.2f}")
+print(f"speculative decode time: {time.time() - t0:.2f}")
