@@ -93,9 +93,7 @@ for i in range(N_ITERS):
     compile_times.append(compile_time)
     print(f"eager eval time {i}: {compile_time}")
 
-model.to("cpu")
 '''
-
 gpt_fast_model = gpt_fast(model, draft_model=draft_model, draft_model_decode_function=generate_probability_distribution, sample_function=argmax)
 
 fast_compile_times = []
